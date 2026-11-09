@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.21";
+const APP_VERSION = "18.0.1.5.27";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -697,6 +697,24 @@ function renderQuoteResults() {
       :added&&Number(added.promo_reward_id)?'Verificando promoción y precio en Odoo…':'Conéctese para consultar precios con impuestos';
     const promoPicker=added&&eligibleOffers.length
       ?`<label class="shop-promo-select"><span>🎁 Promoción</span><select data-quote-promo="${p.id}" aria-label="Promoción de ${esc(p.name)}"><option value="0" ${Number(added.promo_reward_id||0)===0?'selected':''}>Sin promoción</option>${eligibleOffers.map(x=>`<option value="${Number(x.id)}" ${Number(added.promo_reward_id)===Number(x.id)?'selected':''}>${esc(x.name)} · ${money(x.discount)}% descuento</option>`).join('')}</select></label>`:'';
+    const locs=state.online&&Array.isArray(p.stock_locations)?p.stock_locations:[];
+    const warehouseStocks=state.online&&Array.isArray(p.stock_warehouses)?p.stock_warehouses:[];
+    const currentId=Number(state.quoteWarehouseId);
+    // Mostrar la bodega activa primero y el resto agrupado, incluso si tiene 0.
+    const sortedWarehouses=[...warehouseStocks].sort((a,b)=>
+      Number(b.id===currentId)-Number(a.id===currentId) || String(a.name).localeCompare(String(b.name),'es'));
+    const qtyWarehouse=(w)=>`<li class="${Number(w.id)===currentId?'shop-warehouse-current':''}">
+      <span>${esc(w.name)}${!w.can_quote?'<small>Solo consulta</small>':''}${Number(w.id)===currentId?'<small>Seleccionada</small>':''}</span>
+      <b>${money(w.quantity)} ${esc(p.uom||'')}</b></li>`;
+    const otherCount=Math.max(0,sortedWarehouses.length-2);
+    const warehousesMarkup=sortedWarehouses.length?`<div class="shop-location-stock shop-warehouse-stock" aria-label="Stock por bodega">
+      <div class="shop-location-title">🏬 Stock en bodegas · solo consulta</div>
+      <ul>${sortedWarehouses.slice(0,2).map(qtyWarehouse).join('')}</ul>
+      ${otherCount?`<details><summary>Ver ${otherCount} bodegas más</summary><ul>${sortedWarehouses.slice(2).map(qtyWarehouse).join('')}</ul></details>`:''}
+      </div>`:(state.online?'<p class="shop-location-pending">Actualice el catálogo para consultar otras bodegas.</p>':'');
+    const qtyLocation=(x)=>`<li><span>${esc(x.name)}</span><b>${money(x.quantity)} ${esc(p.uom||'')}</b></li>`;
+    const locationMarkup=locs.length?`<details class="shop-internal-locations"><summary>📍 Ver ${locs.length} ubicaciones internas</summary>
+      <ul>${locs.map(qtyLocation).join('')}</ul></details>`:'';
     return `<article class="shop-product ${added?'shop-product-added':''}" data-quote-product="${p.id}">
       <div class="shop-product-top">
         <button type="button" class="quote-thumb shop-photo" data-action="quote-image" data-id="${p.id}" title="Ampliar fotografía" aria-label="Ampliar fotografía de ${esc(p.name)}" ${p.has_image?'':'disabled'}>${quoteImage(p)}</button>
@@ -705,6 +723,8 @@ function renderQuoteResults() {
       </div>
       <div class="shop-price ${offer?'shop-price-promoted':''}"><span>${selected?esc(selected.name):(!chosenId?'Precio de lista':esc((state.meta?.capabilities?.quote_payment_options||[]).find(x=>Number(x.id)===chosenId)?.name||'Forma de pago'))} · impuestos incluidos</span><strong>${displayPrice}</strong>${originalMarkup}</div>
       ${alternatives}
+      ${warehousesMarkup}
+      ${locationMarkup}
       ${promoPicker}
       <p class="shop-price-footnote">${priceFootnote}</p>
       <div class="shop-product-actions">
@@ -912,6 +932,13 @@ function renderQuote() {
   const clients=state.partners.filter(p=>truthy(p.census_locked) && (!p.census_company_id || relationId(p.census_company_id)===Number(state.meta?.user?.company_id)));
   const related=partner&&!state.quoteRetail?ordersFor(partner.id).slice(0,10):[];
   const linkedVisits=partner?visitsFor(partner.id).filter(v=>v.state==="done"):[];
+  // No conservar una bodega anterior si la compañía o permisos cambiaron.
+  if (state.quoteWarehouseId && !(cap.quote_warehouses||[]).some(
+    w => Number(w.id)===Number(state.quoteWarehouseId))) {
+    state.quoteWarehouseId=null;
+    state.quoteResults=[];
+    state.quoteCatalogLoadKey=null;
+  }
   if (!state.quoteWarehouseId && (cap.quote_warehouses||[]).length===1)
     state.quoteWarehouseId=Number(cap.quote_warehouses[0].id);
   const availabilityNote=clients.length||state.quoteRetail?"":`<div class="status-banner warn">No hay catastros protegidos de la compañía actual para cotizar. Abre un catastro, completa los datos obligatorios y pulsa «Finalizar y proteger» antes de crear una cotización.</div>`;
@@ -926,6 +953,7 @@ function renderQuote() {
       <div class="field"><label>Bodega · stock por producto</label><select id="quote-warehouse" required><option value="">Seleccione una bodega</option>${(cap.quote_warehouses||[]).map(w=>`<option value="${w.id}" ${Number(state.quoteWarehouseId)===w.id?'selected':''}>${esc(w.name)}</option>`).join('')}</select></div>
       ${canNegotiateQuote()?`<div class="field"><label>Lista de precios Odoo</label><select id="quote-pricelist" ${state.editingQuoteId?'disabled':''}><option value="">Lista asignada al cliente</option>${(cap.quote_pricelists||[]).map(pl=>`<option value="${pl.id}" ${Number(state.quotePricelistId)===pl.id?'selected':''}>${esc(pl.name)}</option>`).join('')}</select></div>`:''}</div>
       ${(cap.quote_payment_options||[]).length?'':'<div class="status-banner warn">No hay formas de pago configuradas para esta empresa. Un administrador debe crearlas en Catastro → Configuración → Condiciones de pago PWA.</div>'}
+      ${(cap.quote_warehouses||[]).length?'':'<div class="status-banner warn">Su usuario no tiene bodegas habilitadas para cotizar en esta empresa. Un administrador debe asignarlas en Catastro → Configuración → Bodegas para cotizar por usuario.</div>'}
 
       <details class="shop-loyalty-panel"><summary>🎁 Promociones / cupones Loyalty</summary>
         ${cap.quote_product_promotions_supported?'<p class="small">Los descuentos porcentuales compatibles se aplican por artículo según las reglas de Odoo. Las recompensas de dinero o productos gratis requieren tratamiento distinto. Puede elegir una promoción en la revisión.</p>':''}
@@ -968,7 +996,9 @@ function quoteRadisMarkup(q) {
     : '';
   const advice=r.status==='E'
     ? '<p class="small">Radis confirmó esta proforma. Las líneas quedan bloqueadas por el módulo de integración.</p>'
-    : '<p class="small">Solo se envían cotizaciones guardadas, en borrador y con bodega. Esta operación requiere conexión y confirmación del servidor.</p>';
+    : r.percentage_contract_pending
+      ? '<p class="small">Instale el complemento Radis de porcentajes para transmitir descuentos e incrementos sin modificar stock_api_assing.</p>'
+      : '<p class="small">Solo se envían cotizaciones guardadas, en borrador y con bodega. Esta operación requiere conexión y confirmación del servidor.</p>';
   return `<section class="quote-radis card"><div class="row space"><strong>Radis</strong>${status}</div>${advice}${button}</section>`;
 }
 function renderQuoteDetail() {
@@ -1053,7 +1083,9 @@ async function searchQuoteProducts(value) {
     if (!document.querySelector("#quote-search") || document.querySelector("#quote-search").value.trim()!==term ||
         partnerId!==state.quotePartnerId || warehouseId!==state.quoteWarehouseId || pricelistId!==state.quotePricelistId) return;
     const user=state.meta?.user||{};
-    const tagged=result.map(p=>({...p,key:`${user.id}:${user.company_id}:${partnerId}:${warehouseId||0}:${pricelistId||0}:${p.id}`,
+    // Las ubicaciones detalladas son información sensible: se muestran en línea,
+    // pero NO se guardan en IndexedDB ni en cachés entre sesiones/permisos.
+    const tagged=result.map(p=>({...p,stock_locations:[],stock_warehouses:[],key:`${user.id}:${user.company_id}:${partnerId}:${warehouseId||0}:${pricelistId||0}:${p.id}`,
       user_id:user.id,company_id:user.company_id,partner_id:partnerId,warehouse_id:warehouseId||0,pricelist_id:pricelistId||0}));
     // Mostrar siempre los resultados del servidor aunque IndexedDB no acepte escrituras.
     state.quoteResults=result.filter(p=>Number(p.stock_qty)>0 && Number(p.warehouse_id)===Number(warehouseId));
@@ -1685,7 +1717,7 @@ $app.addEventListener("click", async (event) => {
     box.textContent='Comparando stock físico de la bodega con el total de la compañía…';
     try {
       const rows=await rpc('/catastro/app/quote/stock-audit',{partner_id:state.quotePartnerId,warehouse_id:state.quoteWarehouseId,term:state.quoteSearch});
-      box.innerHTML=rows.length?rows.map(row=>`<div class="stock-diagnostic"><strong>${esc(row.name)}</strong><span>Bodega: ${money(row.stock_warehouse)} ${esc(row.uom)} · Total compañía: ${money(row.stock_company)} ${esc(row.uom)}</span><small>Ubicación raíz: ${esc(row.root_location)}</small></div>`).join(''):'No hay productos vendibles con esa búsqueda.';
+      box.innerHTML=rows.length?rows.map(row=>`<div class="stock-diagnostic"><strong>${esc(row.name)}</strong><span>Bodega: ${money(row.stock_warehouse)} ${esc(row.uom)}${row.stock_company===null?'':` · Total compañía: ${money(row.stock_company)} ${esc(row.uom)}`}</span><small>Ubicación raíz: ${esc(row.root_location)}</small></div>`).join(''):'No hay productos vendibles con esa búsqueda.';
     }catch(e){box.textContent=e.message||String(e);}return;
   }
   if (action === 'quote-update-rewards' && state.quoteDetail?.id) {

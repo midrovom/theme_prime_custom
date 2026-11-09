@@ -8,12 +8,33 @@ class CatastroQuotePaymentOption(models.Model):
     _order = 'sequence,id'
 
     name = fields.Char(string='Condición de pago', required=True)
+    erp_code = fields.Char(
+        string='Código ERP',
+        help='Código de la forma de pago en el ERP receptor de Radis. Se envía como texto en order_payment_code de la cabecera; conserva los ceros iniciales.',
+        copy=False,
+    )
     sequence = fields.Integer(default=10)
     active = fields.Boolean(default=True)
     company_id = fields.Many2one('res.company', required=True, default=lambda self: self.env.company)
     surcharge_percent = fields.Float(string='Recargo (%)', default=0, digits=(12, 4), required=True)
     payment_term_id = fields.Many2one('account.payment.term', string='Plazo de pago nativo')
     surcharge_product_id = fields.Many2one('product.product', string='Servicio de recargo (campo obsoleto)', help='Dato histórico únicamente. No se requiere servicio para ninguna forma de pago; el porcentaje se aplica directamente a cada precio unitario.')
+
+    _sql_constraints = [
+        ('catastro_payment_option_erp_code_company_uniq',
+         'unique(company_id, erp_code)',
+         'El código ERP de una forma de pago debe ser único por empresa.'),
+    ]
+
+    @api.constrains('erp_code')
+    def _check_erp_code(self):
+        # Los registros antiguos sin código permanecen configurables: solo
+        # se exige un código cuando se exporta esa opción a Radis.
+        for option in self:
+            code = option.erp_code or ''
+            if code and (not code.strip() or code != code.strip() or any(ord(c) < 32 for c in code)):
+                raise ValidationError('El código ERP no puede contener espacios al inicio o final, ser solo espacios ni contener saltos de línea.')
+
 
     @api.constrains('surcharge_percent', 'company_id', 'payment_term_id')
     def _check_option(self):

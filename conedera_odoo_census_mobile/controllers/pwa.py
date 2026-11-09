@@ -358,7 +358,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.21",
+                "pwa_server_version": "18.0.1.5.27",
                 "census_role": census_role,
                 "quote_retail_role": retail_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
@@ -435,15 +435,32 @@ class ConederaFieldAppController(http.Controller):
         return Sale
 
     def _quote_warehouses(self):
-        """No sudo: solo exponer almacenes visibles al usuario en la compañía activa."""
+        """Almacenes autorizados para COTIZAR, no para consulta general.
+
+        La asignación es explícita por usuario y empresa. Una asignación no
+        concede acceso a otros modelos; Odoo sigue validando las ACL de Ventas.
+        Solo administración puede configurar asignaciones. Los administradores
+        funcionales del sistema ven las bodegas de la compañía activa.
+        """
         if "stock.warehouse" not in request.env.registry:
             return []
-        Warehouse = request.env["stock.warehouse"]
-        if not Warehouse.check_access_rights("read", raise_exception=False):
-            return []
-        return [{"id": w.id, "name": w.display_name} for w in Warehouse.search([
-            ("company_id", "=", request.env.company.id)
-        ], order="name", limit=100)]
+        company = request.env.company
+        user = request.env.user
+        domain = [("company_id", "=", company.id)]
+        if not user.has_group("base.group_system"):
+            Access = request.env["catastro.quote.warehouse.access"].sudo()
+            assigned = Access.search([
+                ("user_id", "=", user.id),
+                ("warehouse_id.company_id", "=", company.id),
+            ]).mapped("warehouse_id").ids
+            # No habilitar todas las bodegas por ausencia de configuración.
+            if not assigned:
+                return []
+            domain.append(("id", "in", assigned))
+        # sudo limitado estrictamente a bodegas autorizadas, para que el perfil
+        # Tienda pueda operar aunque no tenga permisos generales de Inventario.
+        records = request.env["stock.warehouse"].sudo().search(domain, order="name", limit=100)
+        return [{"id": w.id, "name": w.display_name} for w in records]
 
     def _quote_warehouse(self, warehouse_id):
         if not warehouse_id:
@@ -454,8 +471,10 @@ class ConederaFieldAppController(http.Controller):
         except (ValueError, TypeError):
             raise ValidationError("Identificador de almacén inválido.")
         if warehouse_id not in allowed:
-            raise AccessError("Almacén no disponible en esta compañía o sin permisos.")
-        return request.env["stock.warehouse"].browse(warehouse_id)
+            raise AccessError("Almacén no habilitado para cotizar con su usuario en esta empresa.")
+        # Ya validado contra asignación por usuario y empresa. Los vendedores
+        # pueden necesitar leer configuración básica sin ACL general de Stock.
+        return request.env["stock.warehouse"].sudo().browse(warehouse_id)
 
     def _quote_stock_map(self, products, warehouse):
         """Saldo *físico* de stock.quant en ubicaciones internas del almacén.
@@ -492,6 +511,82 @@ class ConederaFieldAppController(http.Controller):
             if not math.isfinite(result[product.id]):
                 raise ValidationError("Cantidad de stock inválida para %s." % product.display_name)
         return result
+
+    def _quote_stock_visibility_maps(self, products):
+        """Existencias informativas por bodega y ubicación, en una sola agregación.
+
+        Tienda: bodegas de la compañía activa (aunque no pueda cotizar allí).
+        Campo: exclusivamente bodegas asignadas para cotizar.
+        No mezcla compañías ni habilita utilizar otro almacén en la proforma.
+        """
+        product_ids = products.ids
+        location_rows = {pid: [] for pid in product_ids}
+        warehouse_rows = {pid: [] for pid in product_ids}
+        if not product_ids or "stock.quant" not in request.env.registry:
+            return location_rows, warehouse_rows
+        user = request.env.user
+        company = request.env.company
+        retail = user.has_group("conedera_odoo_census_mobile.group_quote_retail")
+        authorized = {row["id"] for row in self._quote_warehouses()}
+        warehouse_domain = [("company_id", "=", company.id)]
+        if not retail:
+            if not authorized:
+                return location_rows, warehouse_rows
+            warehouse_domain.append(("id", "in", list(authorized)))
+        # Los datos sudo se limitan a una compañía, los productos del lote y
+        # las raíces de bodegas visibles. Nunca se devuelven quants individuales.
+        warehouses = request.env["stock.warehouse"].sudo().search(
+            warehouse_domain, order="name"
+        ).filtered(lambda w: bool(w.view_location_id))
+        if not warehouses:
+            return location_rows, warehouse_rows
+        roots = [(w, w.view_location_id.parent_path or "%s/" % w.view_location_id.id)
+                 for w in warehouses]
+        root_ids = [w.view_location_id.id for w in warehouses]
+        quantities = {(pid, w.id): 0.0 for pid in product_ids for w in warehouses}
+        Quant = request.env["stock.quant"].sudo().with_company(company)
+        domain = [
+            ("product_id", "in", product_ids),
+            ("location_id", "child_of", root_ids),
+            ("location_id.usage", "=", "internal"),
+            ("location_id.company_id", "in", [False, company.id]),
+            ("company_id", "in", [False, company.id]),
+        ]
+        for product, location, quantity in Quant._read_group(
+            domain, ["product_id", "location_id"], ["quantity:sum"]
+        ):
+            if not product or not location or not math.isfinite(float(quantity)):
+                continue
+            path = location.parent_path or "%s/" % location.id
+            # Ante raíces anidadas, atribuir el saldo solo a la raíz más cercana.
+            matches = [(w, root_path) for w, root_path in roots if path.startswith(root_path)]
+            if not matches:
+                continue
+            warehouse = max(matches, key=lambda item: len(item[1]))[0]
+            qty = float(quantity)
+            quantities[(product.id, warehouse.id)] += qty
+            if float_compare(qty, 0, precision_rounding=product.uom_id.rounding or 0.01) > 0:
+                location_rows[product.id].append({
+                    "name": location.complete_name or location.display_name,
+                    "quantity": qty,
+                    "warehouse_id": warehouse.id,
+                    "warehouse_name": warehouse.display_name,
+                })
+        for product in products:
+            warehouse_rows[product.id] = [{
+                "id": w.id,
+                "name": w.display_name,
+                "quantity": quantities[(product.id, w.id)],
+                "can_quote": w.id in authorized or user.has_group("base.group_system"),
+            } for w in warehouses]
+            location_rows[product.id].sort(key=lambda item: (
+                item["warehouse_name"], -item["quantity"], item["name"]
+            ))
+        return location_rows, warehouse_rows
+
+    def _quote_stock_locations_map(self, products):
+        # Se conserva el método privado por compatibilidad interna.
+        return self._quote_stock_visibility_maps(products)[0]
 
     def _quote_stock_on_hand(self, product, warehouse):
         return self._quote_stock_map(product, warehouse).get(product.id, 0.0)
@@ -530,9 +625,11 @@ class ConederaFieldAppController(http.Controller):
             raise ValidationError("Seleccione la bodega para revisar existencias.")
         products = self._quote_find_products(term=term)[:20]
         stock = self._quote_stock_map(products, wh)
+        retail = request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
         return [{"id": product.id, "name": product.display_name,
                  "stock_warehouse": stock[product.id],
-                 "stock_company": float(product.with_company(request.env.company).qty_available),
+                 "stock_company": (float(product.with_company(request.env.company).qty_available)
+                                   if retail else None),
                  "warehouse": wh.display_name, "root_location": wh.view_location_id.complete_name,
                  "uom": product.uom_id.name}
                 for product in products]
@@ -611,6 +708,49 @@ class ConederaFieldAppController(http.Controller):
             'tax_price_source': 'server',
         }
 
+    def _quote_initial_price_unit(self, partner, product, quantity, pricelist, fiscal_position):
+        """Precio inicial ORM obligatorio para sale.order.line.
+
+        Odoo 18 y módulos de Ventas personalizados no siempre ejecutan el
+        cálculo diferido de price_unit antes del INSERT de un One2many. En
+        PostgreSQL price_unit es NOT NULL. Nunca se toma el precio del cliente
+        web ni de la cola offline: se calcula con la lista nativa de Odoo.
+
+        El campo negociable y las promociones siguen siendo responsabilidad de
+        sus propias personalizaciones, después de crear la cotización.
+        """
+        product = product.with_company(request.env.company)
+        if not product or not pricelist:
+            raise ValidationError("No se pudo determinar producto o lista de precios para guardar la proforma.")
+        price = pricelist._get_product_price(
+            product, quantity, partner=partner, uom=product.uom_id,
+        )
+        if price is None or isinstance(price, bool):
+            raise ValidationError(
+                "La lista de precios no devolvió un importe para %s. "
+                "Revise las reglas de precios en Odoo antes de sincronizar."
+                % product.display_name
+            )
+        try:
+            price = float(price)
+        except (TypeError, ValueError):
+            raise ValidationError("Precio de lista inválido para %s." % product.display_name)
+        if not math.isfinite(price) or price < 0:
+            raise ValidationError("Precio de lista fuera de rango para %s." % product.display_name)
+        taxes = product.taxes_id._filter_taxes_by_company(request.env.company)
+        unit = product._get_tax_included_unit_price_from_price(
+            price, product_taxes=taxes, fiscal_position=fiscal_position,
+        )
+        try:
+            unit = float(unit)
+        except (TypeError, ValueError):
+            raise ValidationError("Odoo no calculó un precio unitario válido para %s." % product.display_name)
+        if not math.isfinite(unit) or unit < 0:
+            raise ValidationError("Precio unitario calculado fuera de rango para %s." % product.display_name)
+        # Un precio cero puede ser legítimo (producto bonificado): NO utilizar
+        # 'or' para reemplazarlo por otro precio.
+        return unit
+
     def _quote_catalog_rows(self, partner, products, quantities=None, warehouse_id=None, pricelist_id=None,
                             only_in_stock=False, max_results=60):
         quantities = quantities or {}
@@ -620,6 +760,7 @@ class ConederaFieldAppController(http.Controller):
         pricelist = self._quote_pricelist(partner, pricelist_id)
         result = []
         stock_map = self._quote_stock_map(products, warehouse)
+        stock_locations, stock_warehouses = self._quote_stock_visibility_maps(products)
         # La compañía, la posición fiscal y las formas de pago se consultan
         # una vez por lote (hasta 60 tarjetas). No se utiliza sudo para
         # consultar productos, compañías o formas de pago no permitidas.
@@ -650,6 +791,10 @@ class ConederaFieldAppController(http.Controller):
                 "currency": pricelist.currency_id.symbol or pricelist.currency_id.name,
                 "pricelist": pricelist.display_name, "qty_priced": qty,
                 "stock_qty": onhand, "stock_kind": "physical", "stock_label": warehouse.display_name,
+                "stock_locations": stock_locations.get(product.id, []),
+                "stock_warehouses": stock_warehouses.get(product.id, []),
+                "stock_location_scope": ("company" if request.env.user.has_group(
+                    "conedera_odoo_census_mobile.group_quote_retail") else "authorized"),
                 "warehouse_id": warehouse.id,
                 "image_url": "/catastro/app/quote/image/%d?partner_id=%d&size=small" % (product.id, partner.id),
                 "zoom_url": "/catastro/app/quote/image/%d?partner_id=%d&size=large" % (product.id, partner.id),
@@ -791,18 +936,38 @@ class ConederaFieldAppController(http.Controller):
         Sale = request.env["sale.order"]
         if "export_send" not in Sale._fields or not hasattr(Sale, "action_export_to_radis"):
             return {"installed": False, "can_send": False}
-        authorized = request.env.user.has_group("stock_api_assing.group_quotes_restring")
+        authorized = bool(request.env.user.has_group("base.group_user")
+                          and request.env["sale.order"].check_access_rights("write", raise_exception=False))
+        allowed_wh = bool(order.warehouse_id and order.warehouse_id.id in {
+            wh["id"] for wh in self._quote_warehouses()
+        })
         export_state = order.export_send or "P"
+        percentage_lines = order.order_line.filtered(
+            lambda l: l.product_id and not l.display_type and (
+                abs(l.discount or 0.0) > 0.000001 or (
+                    'catastro_payment_surcharge_applied' in l._fields
+                    and l.catastro_payment_surcharge_applied
+                    and abs(l.catastro_payment_surcharge_percent or 0.0) > 0.000001
+                )
+            )
+        )
+        supports_percentages = (
+            hasattr(order, '_catastro_radis_bridge_version')
+            and order._catastro_radis_bridge_version() >= 1
+        )
+        percentage_contract_pending = bool(percentage_lines and not supports_percentages)
         return {
             "installed": True,
             "authorized": authorized,
+            "percentage_contract_pending": percentage_contract_pending,
             "status": export_state,
             "label": {"P": "Pendiente de envío", "N": "No enviado", "E": "Enviado a Radis"}.get(
                 export_state, "Estado no disponible"),
             "can_send": bool(
                 authorized and order.state == "draft" and export_state != "E"
                 and request.env["sale.order"].check_access_rights("write", raise_exception=False)
-                and order.warehouse_id and order.order_line.filtered(
+                and allowed_wh and not percentage_contract_pending
+                and order.order_line.filtered(
                     lambda l: l.product_id and not l.display_type
                 )
             ),
@@ -882,8 +1047,6 @@ class ConederaFieldAppController(http.Controller):
         Sale = self._quote_access("write")
         if "export_send" not in Sale._fields or not hasattr(Sale, "action_export_to_radis"):
             raise UserError("La integración Radis no está instalada en Odoo.")
-        if not request.env.user.has_group("stock_api_assing.group_quotes_restring"):
-            raise AccessError("Su usuario no tiene permiso para enviar cotizaciones a Radis.")
         try:
             order_id = int(quote_id)
         except (TypeError, ValueError):
@@ -904,6 +1067,7 @@ class ConederaFieldAppController(http.Controller):
             raise ValidationError("La proforma cambió en Odoo. Recárguela y revise los importes antes de enviarla.")
         if not order.warehouse_id:
             raise ValidationError("Seleccione la bodega del pedido antes de enviarlo a Radis.")
+        self._quote_warehouse(order.warehouse_id.id)  # Bodega autorizada para este usuario.
         # The original sender exports every product line.  Loyalty rewards that
         # use extra product lines cannot be represented as sold merchandise.
         reward_lines = order.order_line.filtered(lambda l:
@@ -916,18 +1080,26 @@ class ConederaFieldAppController(http.Controller):
                 "La proforma contiene recompensas Loyalty como líneas de producto. "
                 "No se enviarán como mercancía a Radis; revise el tratamiento de estas recompensas."
             )
-        # The existing stock_api_assing payload has NO per-line "discount"
-        # field.  Exporting a discounted price_unit as a full price would
-        # overstate the amount in Radis.  Reject instead of silently sending
-        # an economically different quotation.
-        discounted_lines = order.order_line.filtered(lambda l:
-            l.product_id and not l.display_type and abs(l.discount or 0.0) > 0.000001)
-        if discounted_lines:
+        # Compatibilidad en despliegues mixtos: versiones antiguas de Radis
+        # no incluyen el porcentaje de descuento en su JSON. Solo enviar
+        # descuentos cuando el módulo Radis declara el nuevo formato.
+        percentage_lines = order.order_line.filtered(lambda l:
+            l.product_id and not l.display_type and (
+                abs(l.discount or 0.0) > 0.000001 or (
+                    'catastro_payment_surcharge_applied' in l._fields
+                    and l.catastro_payment_surcharge_applied
+                    and abs(l.catastro_payment_surcharge_percent or 0.0) > 0.000001
+                )
+            ))
+        supports_percentages = (
+            hasattr(order, '_catastro_radis_bridge_version')
+            and order._catastro_radis_bridge_version() >= 1
+        )
+        if percentage_lines and not supports_percentages:
             raise ValidationError(
-                "Esta proforma tiene descuentos por producto (Loyalty u otros). "
-                "La API Radis actual no transmite el descuento de cada línea; "
-                "se bloqueó el envío para evitar precios diferentes a los de Odoo. "
-                "Actualice primero el contrato de integración con Radis."
+                "Instale y actualice catastro_radis_percentage_bridge antes de enviar "
+                "proformas con descuentos o incrementos. El módulo stock_api_assing "
+                "original se mantiene sin modificaciones."
             )
         # There is deliberately no direct HTTP call to Radis in the PWA.
         # Stock_api_assing creates the payload, checks the API response and
@@ -994,7 +1166,10 @@ class ConederaFieldAppController(http.Controller):
                 'state': so.state, 'amount_total': so.amount_total,
                 'currency': so.currency_id.symbol or so.currency_id.name,
                 'client_order_ref': so.client_order_ref or '',
-                'can_duplicate': so.state in ('draft', 'sent') and not ('export_send' in so._fields and so.export_send == 'E') and Sale.check_access_rights('create', raise_exception=False),
+                'can_duplicate': (so.state in ('draft', 'sent')
+                                  and not ('export_send' in so._fields and so.export_send == 'E')
+                                  and so.warehouse_id.id in {w['id'] for w in self._quote_warehouses()}
+                                  and Sale.check_access_rights('create', raise_exception=False)),
             } for so in orders[:20]],
             'has_more': len(orders) > 20, 'offset': offset,
         }
@@ -1003,6 +1178,9 @@ class ConederaFieldAppController(http.Controller):
     def quote_retail_duplicate(self, quote_id):
         source = self._retail_quote_record(quote_id, 'read')
         Sale = self._quote_access('create')
+        if not source.warehouse_id:
+            raise ValidationError('La proforma original no tiene bodega asignada.')
+        self._quote_warehouse(source.warehouse_id.id)
         if source.state not in ('draft', 'sent'):
             raise ValidationError('Solo puede duplicar proformas en borrador o enviadas.')
         # Do not let a retail profile reproduce a specially negotiated price.
@@ -1378,11 +1556,25 @@ class ConederaFieldAppController(http.Controller):
         visit_id = int(payload.get("visit_id") or 0)
         if visit_id and self._quote_is_retail(partner.id):
             raise ValidationError("Una proforma de Consumidor Final no puede vincularse a una visita de catastro.")
-        # El campo negociable se escribe con los valores de creación de las
-        # líneas para respetar los métodos create() de los módulos instalados.
+        # El cálculo de price_unit en sale.order.line es diferido en Odoo 18.
+        # En algunas personalizaciones no se ejecuta antes del INSERT y acaba
+        # en NULL, incumpliendo la restricción NOT NULL de PostgreSQL.
+        # Sembrar un precio unitario explícito desde el servidor, obtenido con
+        # la misma lista, cliente y fiscalidad que utiliza el catálogo PWA.
+        selected_pricelist = self._quote_pricelist(partner, payload.get("pricelist_id"))
+        fiscal_position = request.env['account.fiscal.position'].with_company(
+            request.env.company)._get_fiscal_position(partner)
+        products_by_id = {product.id: product for product in accessible}
         order_lines = []
         for pid, qty, negotiated in products:
-            line_vals = {"product_id": pid, "product_uom_qty": qty}
+            line_vals = {
+                "product_id": pid,
+                "product_uom_qty": qty,
+                "price_unit": self._quote_initial_price_unit(
+                    partner, products_by_id[pid], qty,
+                    selected_pricelist, fiscal_position,
+                ),
+            }
             if negotiated is not None:
                 line_vals["negotiable_price"] = negotiated
             order_lines.append((0, 0, line_vals))
@@ -1399,9 +1591,10 @@ class ConederaFieldAppController(http.Controller):
             vals["catastro_payment_option_id"] = option.id
             if option.payment_term_id:
                 vals["payment_term_id"] = option.payment_term_id.id
-        selected_pricelist = payload.get("pricelist_id")
-        if selected_pricelist:
-            vals["pricelist_id"] = self._quote_pricelist(partner, selected_pricelist).id
+        # La misma lista se utiliza para calcular y guardar las líneas. Si
+        # otra lista se aplicase por defecto durante create(), los importes
+        # iniciales ya no corresponderían a las condiciones del cliente.
+        vals["pricelist_id"] = selected_pricelist.id
         if visit_id:
             Visit = request.env["conedera.census.visit"]
             visit = Visit.search([("id", "=", visit_id), ("partner_id", "=", partner.id),
@@ -1549,6 +1742,7 @@ class ConederaFieldAppController(http.Controller):
         if option and option.payment_term_id:
             changes["payment_term_id"] = option.payment_term_id.id
         order.write(changes)
+        products_by_id = {product.id: product for product in products}
         for line_id, pid, qty, negotiated in parsed:
             values = {"product_uom_qty": qty}
             if negotiated is not None:
@@ -1556,7 +1750,17 @@ class ConederaFieldAppController(http.Controller):
             if line_id:
                 normal_by_id[line_id].write(values)
             else:
-                values.update({"order_id": order.id, "product_id": pid})
+                # También al AGREGAR un producto a un borrador existente hay
+                # que inicializar price_unit antes del INSERT (no usar el
+                # valor remitido por el navegador).
+                values.update({
+                    "order_id": order.id,
+                    "product_id": pid,
+                    "price_unit": self._quote_initial_price_unit(
+                        order.partner_id, products_by_id[pid], qty,
+                        order.pricelist_id, order.fiscal_position_id,
+                    ),
+                })
                 Line.create(values)
         for line_id, line in normal_by_id.items():
             if line_id not in used_lines:
