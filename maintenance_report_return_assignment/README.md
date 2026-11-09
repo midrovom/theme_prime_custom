@@ -1,40 +1,54 @@
-# Maintenance Report - Bodega de devolución (Odoo 18)
+# Maintenance Report — Asignación de equipos a bodega (Odoo 18)
 
-**Versión:** 18.0.1.3.0 (actualización de `maintenance_report_return_assignment`).
+**Versión:** `18.0.1.6.0`. Es una actualización del mismo módulo
+`maintenance_report_return_assignment`, NO un nuevo complemento.
 
-## Funcionamiento
+## Funcionalidad
 
-Solo cuando el wizard se abre desde **Generar Acta de Devolución**, debajo de
-**Encargado de entrega/recepción de equipos** aparece **Bodega de devolución**.
-Este campo utiliza **hr.employee**, igual que el campo **Empleado** de los
-equipos (`maintenance.equipment.employee_id`).
+- **Empleados**: casilla **Es bodega** (`hr.employee.es_bodega`), justo debajo
+  de Departamento. Marcar Bodega Sistema (o cualquier empleado válido).
+- **Ficha del equipo**: botón inteligente **Asignar a bodega**. Abre una ventana
+  pequeña independiente de los wizards de entrega/devolución/uniformes.
+- **Selector**: `hr.employee`, con filtro Es bodega = Sí y misma empresa
+  (también admite empleados sin empresa). No usa Contactos ni crea empleados.
+- **Confirmación**: cambia `maintenance.equipment.employee_id` al destino.
+  Valida de nuevo en servidor la casilla y empresa para evitar saltarse el
+  filtro desde una llamada externa.
+- **Auditoría**: guarda el empleado anterior en
+  `empleado_devolucion_anterior_id`, el usuario que hizo el movimiento en
+  `bodega_asignado_por_id`, y la fecha/hora en `bodega_asignacion_fecha`.
+  Los tres campos se ven en la ficha del equipo. Se deja también nota en el
+  chatter del equipo con el movimiento y el usuario que lo hizo.
+- **Actas**: el wizard original no recibe nuevos campos ni modifica la
+  asignación. Los PDFs de devolución conservan al empleado que devolvió el
+  equipo cuando éste está asignado a una bodega, sin mostrar el nombre
+  de la bodega como devolvente.
+- **Historial**: los campos muestran el *último* movimiento; la nota del
+  chatter permite consultar los anteriores cuando se hacen varias asignaciones.
 
-Ejemplo:
-- Antes: Equipo → **Empleado = Pepito Pérez**.
-- En el wizard: **Bodega de devolución = Bodega Sistema** (empleado existente).
-- Al pulsar **Generar PDF**: Equipo → **Empleado = Bodega Sistema**.
-- El PDF identifica a **Pepito Pérez** como persona que devuelve y a
-  **Bodega Sistema** como destino; mantiene al encargado de recepción.
+## Flujo recomendado
 
-No se necesitan contactos ni casillas **Es bodega**, ni se crean empleados
-nuevos. Las actas de entrega y uniformes permanecen sin cambios.
+1. En **Empleados**, abrir **Bodega Sistema** y marcar **Es bodega**.
+2. En Equipos, generar el acta de devolución como de costumbre.
+3. Abrir el equipo y pulsar **Asignar a bodega**; seleccionar **Bodega Sistema**
+   y confirmar.
+4. Verificar que **Empleado** ahora indica Bodega Sistema y que
+   **Registrado por** muestra el usuario que confirmó el traslado.
 
-## Notas
+**Nota de impresión:** si se necesita reimprimir el acta después del traslado,
+la plantilla utiliza el campo Empleado anterior para identificar a quien devolvió
+el equipo.
 
-- El empleado elegido debe existir en **Empleados** y ser visible al usuario.
-- Si se devuelven varios equipos, deben pertenecer a un mismo empleado anterior
-  (el acta original tiene un único nombre y firma de devolución).
-- `empleado_devolucion_anterior_id` conserva el empleado previo para imprimir
-  el acta después de actualizar `employee_id`; no aparece como opción en el wizard.
-- El módulo no modifica el proveedor (`partner_id`) ni los datos de contacto.
-- El registro del empleado anterior refleja la **última devolución**; este
-  módulo no crea un historial independiente de actas.
+## Actualización
 
-## Instalación y actualización
+Reemplazar la carpeta `maintenance_report_return_assignment` del addons-path,
+reiniciar Odoo y actualizar el mismo módulo desde Aplicaciones o ejecutar
+`-u maintenance_report_return_assignment`. Dependencias: `hr_maintenance`,
+`maintenance_report`, `maintenance_report_unifor`.
 
-Descomprimir `maintenance_report_return_assignment` en los addons de Odoo 18,
-reiniciar Odoo, actualizar la lista de aplicaciones y **Actualizar** el mismo
-módulo si la versión anterior ya está instalada. El script de migración retira
-las vistas antiguas de Contactos y Equipos que mostraban los campos obsoletos.
+Hay una migración que elimina la antigua vista que agregaba el campo al wizard.
+La información de equipos, contactos y empleados no se elimina.
 
-Dependencias: `hr_maintenance`, `maintenance_report`, `maintenance_report_unifor`.
+**Verificación:** se han comprobado sintaxis Python, XML, estructura del ZIP y
+la lógica de asignación con pruebas locales. Probar en una base de pruebas
+Odoo 18 antes de llevar a producción.

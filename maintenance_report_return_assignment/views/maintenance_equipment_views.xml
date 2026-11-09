@@ -1,12 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="maintenance_equipment_form_inherit_return_warehouse" model="ir.ui.view">
-        <field name="name">maintenance.equipment.form.bodega.devolucion</field>
+    <record id="view_maintenance_equipment_form_bodega_assignment" model="ir.ui.view">
+        <field name="name">maintenance.equipment.form.bodega.assignment</field>
         <field name="model">maintenance.equipment</field>
-        <field name="inherit_id" ref="hr_maintenance.maintenance_equipment_view_form_inherit_hr"/>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='employee_id']" position="after">
-                <field name="bodega_devolucion_id" readonly="1"/>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_bodega_assignment"
+                        type="object"
+                        string="Asignar a bodega"
+                        class="oe_stat_button"
+                        icon="fa-exchange"/>
+            </xpath>
+            <xpath expr="//field[@name='equipment_properties']" position="before">
+                <group string="Última asignación a bodega" name="last_bodega_assignment">
+                    <group>
+                        <field name="empleado_devolucion_anterior_id" readonly="1"/>
+                        <field name="bodega_asignado_por_id" readonly="1" widget="many2one_avatar_user"/>
+                    </group>
+                    <group>
+                        <field name="bodega_asignacion_fecha" readonly="1"/>
+                    </group>
+                </group>
             </xpath>
         </field>
     </record>

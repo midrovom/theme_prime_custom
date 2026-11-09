@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_maintenance_equipment_bodega_wizard_form" model="ir.ui.view">
+        <field name="name">maintenance.equipment.bodega.wizard.form</field>
+        <field name="model">maintenance.equipment.bodega.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Asignar equipo a bodega">
+                <group>
+                    <field name="company_id" invisible="1"/>
+                    <field name="equipment_id" options="{'no_open': True}" readonly="1"/>
+                    <field name="employee_anterior_id" readonly="1" widget="many2one_avatar_employee"/>
+                    <field name="bodega_employee_id" widget="many2one_avatar_employee"
+                           domain="[('es_bodega', '=', True), '|', ('company_id', '=', False), ('company_id', '=', company_id)]"
+                           options="{'no_create': True, 'no_create_edit': True, 'no_open': True}" required="1"/>
+                </group>
+                <footer>
+                    <button name="action_confirm_assignment" type="object" string="Asignar equipo" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
