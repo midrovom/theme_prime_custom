@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Maintenance Report - Asignación a bodega',
-    'summary': 'Asignación a bodega con receptor por departamento e historial permanente de movimientos',
-    'version': '18.0.1.11.0',
+    'summary': 'Actas por departamento y devolución a bodega desde wizard con historial permanente',
+    'version': '18.0.1.12.0',
     'category': 'Maintenance',
     'license': 'LGPL-3',
     'depends': [
@@ -18,8 +18,9 @@
         'views/maintenance_equipment_bodega_history_views.xml',
         'views/maintenance_equipment_list_views.xml',
         'data/maintenance_equipment_bodega_server_action.xml',
-        'wizard/maintenance_equipment_bodega_wizard_views.xml',
+        'views/maintenance_report_wizard_views.xml',
         'report/maintenance_equipment_return_templates.xml',
+        'report/maintenance_equipment_delivery_templates.xml',
     ],
     'installable': True,
     'application': False,

@@ -38,6 +38,22 @@ class MaintenanceEquipment(models.Model):
         copy=False,
     )
 
+    def _get_department_delivery_signers(self):
+        """Listado de firmantes del departamento al emitir acta de entrega.
+
+        Limitar por departamento y empresa, incluso si hay varias empresas
+        habilitadas. Se incluyen empleados activos y empleados-bodega, puesto
+        que el usuario pidió TODOS los integrantes del departamento.
+        """
+        self.ensure_one()
+        if self.equipment_assign_to != 'department' or not self.department_id:
+            return self.env['hr.employee'].browse()
+        company = self.company_id or self.env.company
+        return self.env['hr.employee'].sudo().search([
+            ('department_id', '=', self.department_id.id),
+            '|', ('company_id', '=', False), ('company_id', '=', company.id),
+        ], order='name, id')
+
     def action_open_bodega_assignment(self):
         """Mismo wizard desde ficha, cabecera de lista y Acción masiva."""
         if not self:

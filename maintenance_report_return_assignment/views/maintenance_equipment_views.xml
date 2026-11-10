@@ -5,9 +5,6 @@
         <field name="model">maintenance.equipment</field>
         <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//div[@name='button_box']" position="inside">
-                <button name="action_open_bodega_assignment" type="object" string="Asignar a bodega" class="oe_stat_button" icon="fa-exchange"/>
-            </xpath>
             <!-- Pestaña posterior a Mantenimiento: únicamente historial de movimientos. -->
             <xpath expr="//page[@name='maintenance']" position="after">
                 <page string="Historial de movimiento" name="last_bodega_assignment">
@@ -16,6 +13,7 @@
                         <list create="0" edit="0" delete="0">
                             <field name="movement_date"/>
                             <field name="previous_employee_name"/>
+                            <field name="previous_department_name" optional="show"/>
                             <field name="warehouse_name"/>
                             <field name="receiver_name"/>
                             <field name="previous_receiver_name" optional="hide"/>

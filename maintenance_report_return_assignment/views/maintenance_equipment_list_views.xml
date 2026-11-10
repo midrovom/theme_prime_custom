@@ -6,6 +6,7 @@
         <field name="name">maintenance.equipment.list.bodega.assignment</field>
         <field name="model">maintenance.equipment</field>
         <field name="inherit_id" ref="maintenance.hr_equipment_view_tree"/>
+        <field name="active" eval="False"/>
         <field name="arch" type="xml">
             <xpath expr="//list/field[1]" position="before">
                 <header>

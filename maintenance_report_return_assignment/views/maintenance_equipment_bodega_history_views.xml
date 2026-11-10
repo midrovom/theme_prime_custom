@@ -22,6 +22,8 @@
                         <group string="Origen y destino">
                             <field name="previous_employee_name"/>
                             <field name="previous_employee_id"/>
+                            <field name="previous_department_name"/>
+                            <field name="previous_department_id"/>
                             <field name="warehouse_name"/>
                             <field name="warehouse_employee_id"/>
                         </group>

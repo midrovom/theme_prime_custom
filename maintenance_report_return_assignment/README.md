@@ -1,62 +1,53 @@
-# Maintenance Report — Entregas a bodega con receptor e historial (Odoo 18)
+# Maintenance Report — Actas departamentales y devolución a bodega (Odoo 18)
 
-**Versión:** `18.0.1.11.0`  
-**Módulo técnico:** `maintenance_report_return_assignment`  
-**Actualiza el módulo instalado** (sin desinstalar).
+**Módulo:** `maintenance_report_return_assignment`  
+**Versión:** `18.0.1.12.0`  
+**Dependencias:** `hr_maintenance`, `maintenance_report`, `maintenance_report_unifor`.
 
-## Cambio de la versión 18.0.1.11.0
+## Novedades 18.0.1.12.0
 
-- **Equipo entregado a (empleado)** solo muestra empleados del mismo departamento de **Bodega de devolución** que **NO** tengan marcada la casilla **Es bodega**. También excluye explícitamente al empleado seleccionado como bodega.
-- Si dentro del departamento hay varios empleados con **Es bodega**, ninguno puede seleccionarse como receptor.
-- Se valida igualmente al confirmar, incluso en asignación masiva o a través de llamadas RPC: no es posible registrar como receptor un empleado marcado **Es bodega**.
-- El equipo continúa asignado a la bodega seleccionada; los demás campos, el historial, la pestaña y el PDF no cambian.
+### Acta de entrega
 
-## Cambio visual de la versión 18.0.1.10.0
+- Si en la ficha de un equipo **Usado por = Departamento**, el PDF **Acta de Entrega** identifica al departamento e imprime, debajo de **RECIBÍ CONFORME**, un listado de líneas de firma para **todos los empleados activos de ese departamento**, de la empresa del equipo. Cada empleado aparece con su nombre y cédula si tiene el dato registrado.
+- Si **Usado por = Empleado**, el acta conserva su presentación y las firmas individuales anteriores.
+- Para evitar un PDF que atribuya firmas al departamento equivocado, un acta departamental conjunta solo admite equipos del **mismo departamento**. Una entrega uniforme conserva su flujo original.
 
-- La pestaña anteriormente llamada **Última asignación a bodega** se denomina ahora **Historial de movimiento**.
-- Se retiró de la vista la sección **Último movimiento a bodega**. Solo queda visible el apartado **Historial de movimientos a bodega** con la tabla de movimientos.
-- Los campos de auditoría del último movimiento se conservan internamente para compatibilidad y para la trazabilidad; no se eliminan registros anteriores.
-- El botón de asignación individual y masiva, el filtro «Es bodega», el receptor por departamento y las actas no se modifican.
+### Acta de devolución
 
-## Funcionalidad conservada de la versión 18.0.1.9.0
+- La asignación a bodega se realiza **dentro de Generar Acta de Devolución**, no mediante botones separados.
+- El wizard ahora incluye, después de **Encargado de entrega/recepción de equipos**:
+  1. **Departamento actual** (informativo si la asignación era por departamento).
+  2. **Empleado actual**: si el equipo estaba asignado al departamento, elegir un empleado de ese departamento como persona que devuelve; si estaba a nombre de un empleado, se muestra automáticamente ese mismo empleado y no se permite sustituirlo.
+  3. **Bodega de devolución**: solo empleados de `hr.employee` con el check **Es bodega**.
+  4. **Equipo entregado a (empleado)**: solo empleados del mismo departamento de la bodega, excluyendo empleados con **Es bodega** y validando la empresa.
+- **Generar PDF** valida primero toda la selección, actualiza `maintenance.equipment.employee_id` con el **empleado de bodega**, registra la entrega y genera el PDF con **el empleado que hizo la devolución**, no la bodega como origen.
+- Se reutilizan las validaciones existentes y el registro de historial por equipo, incluyendo nombre del antiguo empleado, **departamento de origen** cuando aplique, bodega, receptor físico, usuario de Odoo y fecha.
+- Para operaciones con varios equipos, deben pertenecer a **un mismo empleado** o a **un mismo departamento**. No se mezcla personal distinto en un solo acta; el usuario deberá generar actas separadas para evitar documentos con firmas incorrectas.
+- La selección por departamento no modifica la condición **Es bodega** de ningún empleado. Tampoco crea empleados.
 
-1. En **Mantenimiento > Equipos > Asignar a bodega** (individual o masivo), debajo de **Bodega de devolución** se añadió **Equipo entregado a (empleado)**. El campo selecciona registros de `hr.employee` cuyo `department_id` sea igual al departamento del empleado de bodega seleccionado y que **no** estén marcados como **Es bodega**. Se aplica también el filtro de empresa. El campo se limpia al cambiar la bodega y es obligatorio.
-2. La bodega seleccionada debe tener un **departamento** en su ficha de empleado. De lo contrario, se muestra un aviso de configuración y se impide confirmar.
-3. El `maintenance.equipment.employee_id` **continúa siendo la bodega** elegida, por ejemplo **Bodega Sistema**. El empleado receptor solo identifica a **quién se entregó físicamente** el equipo dentro de ese departamento.
-4. En la ficha del equipo, inmediatamente **después de Mantenimiento**, la pestaña **Historial de movimiento** presenta solo el apartado **Historial de movimientos a bodega**.
-5. La tabla del **Historial de movimientos a bodega** con una fila por equipo y operación. Guarda fecha, empleado anterior, bodega, receptor físico y usuario que registró, junto con una copia de los nombres de ese momento para conservar el contexto si luego se renombran.
-6. Si un equipo ya está en esa bodega, pero cambia el receptor, se permite registrar un **traspaso interno** como movimiento nuevo, sin alterar el empleado original guardado para el PDF. Si tanto bodega como receptor siguen iguales, se omite el equipo (no se duplica la historia).
-7. Se conserva el registro en el chatter del equipo. El historial estructurado tiene permisos de **solo lectura** desde la interfaz y está separado por empresas.
+### Cambios en la interfaz
 
-## Ejemplo
+- Se elimina de la ficha del equipo el botón inteligente **Asignar a bodega**.
+- Se oculta la antigua acción masiva **Asignar a bodega** del encabezado de la lista y del menú **Acción**; la devolución desde la vista lista sigue disponible con **Generar Acta de Devolución**.
+- La pestaña **Historial de movimiento**, después de **Mantenimiento**, muestra la tabla de **Historial de movimientos a bodega**, ahora con una columna **Departamento de origen**.
+- No se borra el historial de asignaciones de versiones previas ni el checkbox **Es bodega**.
+- El acta de entrega de uniformes sigue como antes.
 
-- Equipo: Laptop HP
-- Empleado anterior: **Pepito Pérez**
-- Bodega de devolución: **Bodega Sistema** (`hr.employee`, departamento **Sistemas**, `es_bodega=True`)
-- Equipo entregado a: **Juan López** (empleado del departamento **Sistemas**)
-- Registrado por: **Administrador de Odoo** (usuario conectado)
+## Ejemplos
 
-Después de confirmar:
+**Equipo asignado al Departamento Sistemas:** Acta de Entrega imprime las firmas de Juan, María, etc. Al realizar devolución, elegir Juan como **Empleado actual**, Bodega Sistema como bodega y María como empleado que recibe físicamente en bodega. El equipo queda con `employee_id = Bodega Sistema`. El acta registra a Juan como quien devuelve. El historial indica Departamento Sistemas, Juan, Bodega Sistema, María, usuario registrador y fecha.
 
-- `maintenance.equipment.employee_id` = **Bodega Sistema**.
-- Movimiento registrado: **Pepito Pérez → Bodega Sistema**, recibido por **Juan López** y registrado por el usuario conectado.
-- La tabla de historial conserva ese movimiento incluso si más adelante se registra otro.
-- El PDF de acta no cambia de wizard y conserva la persona original en el documento, como en versiones anteriores.
+**Equipo de Pepito Pérez:** el wizard muestra Pepito como **Empleado actual** de solo lectura. Se elige la bodega y su receptor y se genera PDF. El equipo queda a nombre de la bodega y el PDF muestra a Pepito como quien devolvió.
 
-## Asignación masiva
+## Instalación / actualización
 
-Desde la lista de Equipos, marque varios registros y use **Asignar a bodega** desde la cabecera o desde **Acción**. Elija una bodega y un receptor del mismo departamento: cada equipo tendrá su **registro propio** con su empleado anterior, bodega, receptor, usuario y fecha.
+1. Hacer copia de seguridad de base de datos y archivos.
+2. Reemplazar **solo** la carpeta del addon `maintenance_report_return_assignment`, sin desinstalarlo.
+3. Reiniciar Odoo y actualizar el módulo (`-u maintenance_report_return_assignment` o **Aplicaciones > Actualizar**).
+4. Comprobar en un entorno de pruebas: entrega de un equipo departamental, devolución individual, devolución departamental, devolución múltiple de un departamento, filtro del receptor, historial y PDF resultante.
 
-No se mezclan compañías. La selección y el departamento se validan tanto en el formulario como en el servidor.
+**Nota:** el historial de movimientos anteriores se conserva. Las acciones antiguas de asignación a bodega se desactivan para que las nuevas devoluciones queden documentadas al generar su acta. El modelo auxiliar y la lógica común permanecen por compatibilidad interna.
 
-## Actualización y registros antiguos
+## Validaciones locales
 
-Sustituya los archivos del módulo actual, reinicie Odoo y actualice `maintenance_report_return_assignment` desde Aplicaciones o con `-u maintenance_report_return_assignment`. No lo desinstale.
-
-Se incluye una migración para conservar **una instantánea de la última asignación a bodega** existente en versiones antiguas cuando los datos permiten identificarla, sin inventar el receptor que antes no se guardaba. Movimientos todavía más antiguos solo quedan en el chatter, si están presentes: no se pueden reconstruir fielmente a partir de los tres campos de última asignación.
-
-**Dependencias conservadas:** `hr_maintenance`, `maintenance_report`, `maintenance_report_unifor`.
-
-## Validación
-
-Se verificó sintaxis Python, XML, referencias, contenido del ZIP y flujos de selección de departamento, cambio de receptor, reasignación individual y masiva con simulaciones locales. No se dispone de un servidor Odoo 18 ejecutándose aquí; verifique el flujo real antes de pasar a producción.
+Comprobadas sintaxis Python, XML, dominios, referencias de herencia de PDF contra los módulos recibidos, archivo ZIP y escenarios de flujo mediante simulaciones. **No hay un servidor Odoo 18 ejecutándose en este entorno**, por lo que se requiere una prueba de instalación y generación real del PDF antes de producción.

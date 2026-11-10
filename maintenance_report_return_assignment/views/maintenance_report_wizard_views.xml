@@ -1,18 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_maintenance_report_wizard_form_return_destination" model="ir.ui.view">
-        <field name="name">maintenance.report.wizard.form.bodega.devolucion</field>
+    <record id="view_maintenance_report_wizard_return_bodega" model="ir.ui.view">
+        <field name="name">maintenance.report.wizard.return.bodega</field>
         <field name="model">maintenance.report.wizard</field>
         <field name="inherit_id" ref="maintenance_report.view_maintenance_report_wizard_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='entregado_por_id']" position="after">
+            <xpath expr="//group/field[@name='entregado_por_id']" position="after">
                 <field name="report_type" invisible="1"/>
-                <field name="employee_id"
-                       string="Bodega de devolución"
+                <field name="equipment_ids" invisible="1"/>
+                <field name="origen_empresa_id" invisible="1"/>
+                <field name="origen_department_id" string="Departamento actual"
+                       readonly="1"
+                       invisible="report_type != 'return' or not es_origen_departamento"/>
+                <field name="es_origen_departamento" invisible="1"/>
+                <field name="empleado_actual_id" string="Empleado actual"
+                       widget="many2one_avatar_employee"
+                       invisible="report_type != 'return'"
+                       readonly="not es_origen_departamento"
+                       required="report_type == 'return'"
+                       options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                <field name="bodega_employee_id" string="Bodega de devolución"
                        widget="many2one_avatar_employee"
                        invisible="report_type != 'return'"
                        required="report_type == 'return'"
-                       options="{'no_create': True, 'no_create_edit': True}"/>
+                       options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                <field name="bodega_department_id" invisible="1"/>
+                <field name="bodega_receptor_id" string="Equipo entregado a (empleado)"
+                       widget="many2one_avatar_employee"
+                       invisible="report_type != 'return'"
+                       readonly="not bodega_department_id"
+                       required="report_type == 'return'"
+                       options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                <div class="text-muted"
+                     invisible="report_type != 'return' or not bodega_employee_id or bodega_department_id">
+                    Configure el departamento del empleado seleccionado como bodega.
+                </div>
             </xpath>
         </field>
     </record>

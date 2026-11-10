@@ -60,6 +60,17 @@ class MaintenanceEquipmentBodegaWizard(models.TransientModel):
         self.bodega_receptor_id = False
 
     def action_confirm_assignment(self):
+        """Compatibilidad con acciones antiguas; la interfaz usa el acta."""
+        self.ensure_one()
+        self._apply_assignment()
+        return {'type': 'ir.actions.client', 'tag': 'reload'}
+
+    def _apply_assignment(self, return_employee=None):
+        """Validar y registrar todas las asignaciones; misma transacción del PDF.
+
+        return_employee identifica a la persona que devuelve el equipo cuando
+        la operación proviene del acta, también para activos departamentales.
+        """
         self.ensure_one()
         equipment_set = self.equipment_ids or self.equipment_id
         if not equipment_set:
@@ -132,8 +143,14 @@ class MaintenanceEquipmentBodegaWizard(models.TransientModel):
             # Al cambiar solo el receptor dentro de la misma bodega se conserva
             # el empleado original, importante para el acta de devolución.
             original_employee = (
-                equipment.empleado_devolucion_anterior_id if same_bodega else previous
+                return_employee if return_employee else
+                (equipment.empleado_devolucion_anterior_id if same_bodega else previous)
             )
+            source_department = (
+                equipment.department_id
+                if equipment.equipment_assign_to == 'department' else False
+            )
+            source_employee = return_employee if return_employee else previous
             equipment.write({
                 'empleado_devolucion_anterior_id': original_employee.id if original_employee else False,
                 'employee_id': destination.id,
@@ -150,12 +167,14 @@ class MaintenanceEquipmentBodegaWizard(models.TransientModel):
                 'equipment_id': equipment.id,
                 'company_id': company.id,
                 'movement_date': now,
-                'previous_employee_id': previous.id if previous else False,
+                'previous_employee_id': source_employee.id if source_employee else False,
+                'previous_department_id': source_department.id if source_department else False,
                 'warehouse_employee_id': destination.id,
                 'receiver_employee_id': receiver.id,
                 'previous_receiver_employee_id': previous_receiver.id if previous_receiver else False,
                 'registered_by_id': user.id,
-                'previous_employee_name': previous.display_name if previous else _('Sin empleado'),
+                'previous_employee_name': source_employee.display_name if source_employee else _('Sin empleado'),
+                'previous_department_name': source_department.display_name if source_department else False,
                 'warehouse_name': destination.display_name,
                 'receiver_name': receiver.display_name,
                 'previous_receiver_name': previous_receiver.display_name if previous_receiver else False,
@@ -165,7 +184,7 @@ class MaintenanceEquipmentBodegaWizard(models.TransientModel):
                 body=_('Movimiento a bodega: %(old)s → %(warehouse)s. '
                        'Recibido por %(receiver)s. %(previous_receiver)s'
                        'Registrado por %(user)s.') % {
-                    'old': escape(previous.display_name if previous else _('Sin empleado')),
+                    'old': escape(source_employee.display_name if source_employee else _('Sin empleado')),
                     'warehouse': escape(destination.display_name),
                     'receiver': escape(receiver.display_name),
                     'previous_receiver': (
@@ -177,4 +196,4 @@ class MaintenanceEquipmentBodegaWizard(models.TransientModel):
                 subtype_xmlid='mail.mt_note',
             )
 
-        return {'type': 'ir.actions.client', 'tag': 'reload'}
+        return len(to_change)

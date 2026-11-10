@@ -30,6 +30,10 @@ class MaintenanceEquipmentBodegaHistory(models.Model):
         'hr.employee', string='Empleado anterior', readonly=True,
         ondelete='set null',
     )
+    previous_department_id = fields.Many2one(
+        'hr.department', string='Departamento anterior', readonly=True,
+        ondelete='set null',
+    )
     warehouse_employee_id = fields.Many2one(
         'hr.employee', string='Bodega de devolución', required=True,
         readonly=True, ondelete='restrict',
@@ -51,6 +55,9 @@ class MaintenanceEquipmentBodegaHistory(models.Model):
     # empleado o se desactiva un usuario posteriormente.
     previous_employee_name = fields.Char(
         string='Empleado anterior', readonly=True,
+    )
+    previous_department_name = fields.Char(
+        string='Departamento de origen', readonly=True,
     )
     warehouse_name = fields.Char(
         string='Bodega', readonly=True,
