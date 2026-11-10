@@ -2,7 +2,7 @@
 {
     'name': 'Maintenance Report - Asignación a bodega',
     'summary': 'Asignación individual y masiva de equipos a empleados marcados como bodega, con auditoría',
-    'version': '18.0.1.7.0',
+    'version': '18.0.1.8.0',
     'category': 'Maintenance',
     'license': 'LGPL-3',
     'depends': [

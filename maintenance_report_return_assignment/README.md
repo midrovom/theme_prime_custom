@@ -1,9 +1,19 @@
 # Maintenance Report — Asignación individual y masiva de equipos a bodega (Odoo 18)
 
-**Versión:** `18.0.1.7.0`. Actualiza el mismo módulo
+**Versión:** `18.0.1.8.0`. Actualiza el mismo módulo
 `maintenance_report_return_assignment` sin desinstalarlo.
 
-## Novedad en la versión 18.0.1.7.0
+## Novedad en la versión 18.0.1.8.0
+
+- La sección **Última asignación a bodega** se mueve desde el área superior
+  de la ficha de equipo a una **pestaña nueva**, ubicada inmediatamente
+  después de la pestaña **Mantenimiento** (`name="maintenance"`).
+- En esa pestaña permanecen, sin cambios, los campos de auditoría
+  **Empleado anterior**, **Registrado por** y **Fecha de asignación a bodega**.
+- No cambia el funcionamiento de los botones individuales y masivos ni el
+  flujo de actas, empleados y reasignación.
+
+## Funcionalidad conservada de la versión 18.0.1.7.0
 
 - En **Equipos > vista de lista**, marcar las casillas de **uno o varios**
   equipos. Aparece el botón de cabecera **Asignar a bodega** (sin necesidad
@@ -32,8 +42,9 @@
    equipos mediante sus casillas.
 3. Pulsar **Asignar a bodega** (o el menú **Acción > Asignar a bodega**).
 4. Seleccionar **Bodega Sistema** y confirmar una sola vez.
-5. En cada equipo, verificar **Empleado**, **Empleado anterior**, **Registrado
-   por** y **Fecha de asignación a bodega**.
+5. En cada equipo, verificar **Empleado** y abrir la pestaña **Última
+   asignación a bodega**, ubicada después de **Mantenimiento**, para consultar
+   **Empleado anterior**, **Registrado por** y **Fecha de asignación a bodega**.
 
 ## Actualización
 
