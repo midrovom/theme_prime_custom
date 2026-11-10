@@ -1,7 +1,7 @@
 # Maintenance Report — Entrega y devolución de equipos con historial (Odoo 18)
 
 **Módulo:** `maintenance_report_return_assignment`  
-**Versión:** `18.0.1.17.0`  
+**Versión:** `18.0.1.18.0`  
 **Dependencias:** `hr_maintenance`, `maintenance_report`, `maintenance_report_unifor`.
 
 ## Acta de entrega: dos comportamientos independientes
@@ -69,3 +69,12 @@ Se eliminó el campo XML `active` de `ir.actions.server` en `data/maintenance_eq
 - No se cambian modelos de historial, datos existentes ni mecanismos de devolución individual/departamental. No es necesario reinstalar; actualizar el módulo conserva los movimientos.
 
 > Los empleados que no tengan asignado el departamento (ni uno de sus subdepartamentos) en su ficha de **Empleados** no pueden identificarse automáticamente como miembros del mismo. Si siguen faltando firmantes, revisar `department_id` en esas fichas.
+
+
+## Versión 18.0.1.18.0 — Departamentos receptores configurables
+
+- Se añadió **Habilitar como departamento receptor** (`hr.department.permite_recepcion_equipos`), desmarcada por defecto. Solo los departamentos marcados y de la empresa del equipo (o compartidos) aparecen en `Departamento receptor` para las **devoluciones de equipos asignados a departamento**. Configurar desde **Empleados → Departamentos**; marcar Sistemas y RRHH o los departamentos que corresponda en cada entorno. No hay listas por nombre ni por ID.
+- **Equipo entregado a (empleado)** sigue mostrando los empleados del departamento receptor seleccionado y excluye los que tengan **Es bodega**, tanto en la interfaz como al generar el acta. Se conserva la validación de empresa y departamento. Para **equipos asignados a empleado**, el filtro sigue basado en el departamento de la bodega seleccionada.
+- Se retiró la ayuda visible bajo el selector en el wizard de devolución departamental. La sección extra del PDF que decía **Departamento responsable / Departamento receptor / Recibido-revisado por** ya no aparece; los datos continúan guardándose en el historial, junto con el empleado que entregó, el usuario registrador y la fecha.
+- **Los equipos asignados a departamento NO cambian `department_id`, `employee_id` ni `equipment_assign_to`.** El PDF mantiene la identificación de quien devuelve y el reporte de entrega conserva las firmas configuradas en 18.0.1.17.0.
+- Tras actualizar el módulo, marcar explícitamente los departamentos receptores deseados; por defecto ninguno está habilitado.

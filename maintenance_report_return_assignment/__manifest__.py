@@ -2,7 +2,7 @@
 {
     'name': 'Maintenance Report - Asignación a bodega',
     'summary': 'Devoluciones diferenciadas por empleado/departamento y trazabilidad permanente',
-    'version': '18.0.1.17.0',
+    'version': '18.0.1.18.0',
     'category': 'Maintenance',
     'license': 'LGPL-3',
     'depends': [
@@ -14,6 +14,7 @@
         'security/ir.model.access.csv',
         'security/maintenance_bodega_history_rules.xml',
         'views/hr_employee_views.xml',
+        'views/hr_department_views.xml',
         'views/maintenance_equipment_views.xml',
         'views/maintenance_equipment_bodega_history_views.xml',
         'views/maintenance_equipment_list_views.xml',

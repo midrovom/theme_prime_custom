@@ -45,10 +45,11 @@ class MaintenanceReportWizard(models.TransientModel):
     )
     receptor_department_filter_id = fields.Many2one(
         'hr.department', string='Departamento receptor',
-        domain="['|', ('company_id', '=', False), ('company_id', '=', origen_empresa_id)]",
-        help='En devoluciones departamentales seleccione el departamento que '
-             'recibe/revisa el equipo. El campo Equipo entregado a mostrará '
-             'directamente sus empleados. La asignación del equipo no cambia.',
+        domain="[('permite_recepcion_equipos', '=', True), '|', "
+               "('company_id', '=', False), ('company_id', '=', origen_empresa_id)]",
+        help='Solo se muestran departamentos que tienen marcada la casilla '
+             'Habilitar como departamento receptor. Equipo entregado a '
+             'mostrará los empleados de ese departamento, excluyendo Es bodega.',
     )
     bodega_receptor_id = fields.Many2one(
         'hr.employee', string='Equipo entregado a (empleado)',
@@ -176,6 +177,11 @@ class MaintenanceReportWizard(models.TransientModel):
             raise UserError(_('Los equipos necesitan un departamento de origen.'))
         if not destination or not destination.exists():
             raise UserError(_('Seleccione el Departamento receptor.'))
+        if not destination.permite_recepcion_equipos:
+            raise UserError(_(
+                'El departamento "%s" no está habilitado para recibir equipos. '
+                'Marque "Habilitar como departamento receptor" en su ficha.'
+            ) % destination.display_name)
         if destination.company_id and destination.company_id.id != company_id:
             raise UserError(_(
                 'El Departamento receptor debe pertenecer a la empresa de los equipos.'

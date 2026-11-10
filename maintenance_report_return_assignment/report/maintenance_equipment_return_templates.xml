@@ -7,17 +7,6 @@
               inherit_id="maintenance_report.report_equipment_return">
         <xpath expr="//p//span[@t-out='docs[0].employee_id.name']/ancestor::p[1]"
                position="after">
-            <p t-if="docs[0].devolucion_acta_departamento_id"
-               style="margin-top:8px; text-align:justify;">
-                <strong>Departamento responsable:</strong>
-                <span t-out="docs[0].devolucion_acta_departamento_id.name or ''"/>
-                <br/>
-                <strong>Departamento receptor:</strong>
-                <span t-out="docs[0].devolucion_acta_receptor_id.department_id.name or ''"/>
-                <br/>
-                <strong>Recibido/revisado por:</strong>
-                <span t-out="docs[0].devolucion_acta_receptor_id.name or ''"/>
-            </p>
             <p t-if="not docs[0].devolucion_acta_departamento_id and docs[0].employee_id.es_bodega and docs[0].devolucion_acta_empleado_id"
                style="margin-top:8px; text-align:justify;">
                 <strong>Bodega de devolución:</strong>
