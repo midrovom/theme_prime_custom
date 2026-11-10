@@ -165,6 +165,8 @@ class MaintenanceEquipmentBodegaWizard(models.TransientModel):
             # masiva. Solo guardar datos validados después de equipment.write.
             History.create({
                 'equipment_id': equipment.id,
+                'movement_type': 'employee_to_warehouse',
+                'destination_department_id': destination.department_id.id,
                 'company_id': company.id,
                 'movement_date': now,
                 'previous_employee_id': source_employee.id if source_employee else False,

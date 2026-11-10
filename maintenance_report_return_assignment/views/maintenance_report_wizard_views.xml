@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="view_maintenance_report_wizard_return_bodega" model="ir.ui.view">
-        <field name="name">maintenance.report.wizard.return.bodega</field>
+        <field name="name">maintenance.report.wizard.return.bodega.department</field>
         <field name="model">maintenance.report.wizard</field>
         <field name="inherit_id" ref="maintenance_report.view_maintenance_report_wizard_form"/>
         <field name="arch" type="xml">
@@ -9,31 +9,41 @@
                 <field name="report_type" invisible="1"/>
                 <field name="equipment_ids" invisible="1"/>
                 <field name="origen_empresa_id" invisible="1"/>
+                <field name="es_origen_departamento" invisible="1"/>
                 <field name="origen_department_id" string="Departamento actual"
                        readonly="1"
                        invisible="report_type != 'return' or not es_origen_departamento"/>
-                <field name="es_origen_departamento" invisible="1"/>
                 <field name="empleado_actual_id" string="Empleado actual"
                        widget="many2one_avatar_employee"
                        invisible="report_type != 'return'"
                        readonly="not es_origen_departamento"
                        required="report_type == 'return'"
                        options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+
+                <!-- Solo equipos de EMPLEADO pasan a una bodega. -->
                 <field name="bodega_employee_id" string="Bodega de devolución"
                        widget="many2one_avatar_employee"
-                       invisible="report_type != 'return'"
-                       required="report_type == 'return'"
+                       invisible="report_type != 'return' or es_origen_departamento"
+                       required="report_type == 'return' and not es_origen_departamento"
                        options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                 <field name="bodega_department_id" invisible="1"/>
+                <field name="receptor_department_ids" invisible="1"/>
+                <!-- En departamento, departamentos con bodega configurada; en empleado,
+                     departamento de la bodega elegida. Nunca empleados-bodega. -->
                 <field name="bodega_receptor_id" string="Equipo entregado a (empleado)"
                        widget="many2one_avatar_employee"
                        invisible="report_type != 'return'"
-                       readonly="not bodega_department_id"
+                       readonly="not receptor_department_ids"
                        required="report_type == 'return'"
                        options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                 <div class="text-muted"
-                     invisible="report_type != 'return' or not bodega_employee_id or bodega_department_id">
+                     invisible="report_type != 'return' or es_origen_departamento or not bodega_employee_id or bodega_department_id">
                     Configure el departamento del empleado seleccionado como bodega.
+                </div>
+                <div class="text-muted"
+                     invisible="report_type != 'return' or not es_origen_departamento">
+                    Devolución departamental: se registra quién devuelve y quién recibe
+                    dentro de un departamento con bodega habilitada, sin trasladar el equipo ni cambiar su asignación.
                 </div>
             </xpath>
         </field>

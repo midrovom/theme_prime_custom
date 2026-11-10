@@ -32,9 +32,23 @@ class MaintenanceEquipment(models.Model):
         'hr.employee', string='Recibido por (empleado)', readonly=True,
         copy=False, tracking=True,
     )
+    # Último documento generado: fotografía del firmante y receptor. En
+    # devoluciones departamentales employee_id y department_id NO se alteran.
+    devolucion_acta_empleado_id = fields.Many2one(
+        'hr.employee', string='Último empleado que devolvió',
+        readonly=True, copy=False, ondelete='set null',
+    )
+    devolucion_acta_departamento_id = fields.Many2one(
+        'hr.department', string='Departamento en última devolución',
+        readonly=True, copy=False, ondelete='set null',
+    )
+    devolucion_acta_receptor_id = fields.Many2one(
+        'hr.employee', string='Último empleado receptor',
+        readonly=True, copy=False, ondelete='set null',
+    )
     bodega_historial_ids = fields.One2many(
         'maintenance.equipment.bodega.history', 'equipment_id',
-        string='Historial de asignaciones a bodega', readonly=True,
+        string='Historial de movimientos y devoluciones', readonly=True,
         copy=False,
     )
 

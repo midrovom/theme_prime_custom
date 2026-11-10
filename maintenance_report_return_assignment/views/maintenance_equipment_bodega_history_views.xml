@@ -5,13 +5,14 @@
         <field name="name">maintenance.equipment.bodega.history.form</field>
         <field name="model">maintenance.equipment.bodega.history</field>
         <field name="arch" type="xml">
-            <form string="Movimiento a bodega" create="0" edit="0" delete="0">
+            <form string="Historial de movimiento" create="0" edit="0" delete="0">
                 <sheet>
                     <group>
                         <group>
                             <field name="equipment_id"/>
                             <field name="company_id"/>
                             <field name="movement_date"/>
+                            <field name="movement_type"/>
                         </group>
                         <group>
                             <field name="registered_by_name"/>
@@ -25,7 +26,8 @@
                             <field name="previous_department_name"/>
                             <field name="previous_department_id"/>
                             <field name="warehouse_name"/>
-                            <field name="warehouse_employee_id"/>
+                            <field name="warehouse_employee_id" invisible="movement_type == 'department_return'"/>
+                            <field name="destination_department_id" invisible="movement_type != 'department_return'"/>
                         </group>
                         <group string="Recepción física">
                             <field name="receiver_name"/>

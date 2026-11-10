@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Maintenance Report - Asignación a bodega',
-    'summary': 'Actas por departamento y devolución a bodega desde wizard con historial permanente',
-    'version': '18.0.1.12.0',
+    'summary': 'Devoluciones diferenciadas por empleado/departamento y trazabilidad permanente',
+    'version': '18.0.1.13.0',
     'category': 'Maintenance',
     'license': 'LGPL-3',
     'depends': [

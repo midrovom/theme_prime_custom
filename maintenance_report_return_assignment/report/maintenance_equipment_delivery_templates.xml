@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Firma colectiva: solo si el equipo figura asignado por Departamento.
-         Acta individual conserva el diseño y las firmas originales. -->
+    <!-- Entrega por empleado: NO reemplazar el texto ni las firmas originales.
+         Solamente se ocultan cuando el equipo se asigna por departamento. -->
     <template id="report_equipment_delivery_department_signatures"
               inherit_id="maintenance_report.report_equipment">
-        <xpath expr="//p[.//span[@t-out='docs[0].employee_id.name']]" position="replace">
+        <xpath expr="//p[.//span[@t-out='docs[0].employee_id.name']]" position="before">
             <p t-if="docs and docs[0].equipment_assign_to == 'department' and docs[0].department_id"
                style="margin-top:15px; text-align:justify;">
                 <strong><span t-out="docs[0].partner_id.name or ''"/></strong>
@@ -12,15 +12,12 @@
                 <strong><span t-out="docs[0].department_id.name"/></strong>
                 los siguientes equipos, cuyos integrantes son corresponsables de su uso y custodia:
             </p>
-            <p t-else="" style="margin-top:15px; text-align:justify;">
-                <strong><span t-out="docs[0].partner_id.name or ''"/></strong>
-                en calidad de patrono hace entrega al Señor(a)
-                <strong><span t-out="docs[0].employee_id.name or ''"/></strong>
-                los siguientes equipos:
-            </p>
+        </xpath>
+        <xpath expr="//p[.//span[@t-out='docs[0].employee_id.name']]" position="attributes">
+            <attribute name="t-if">not (docs and docs[0].equipment_assign_to == 'department' and docs[0].department_id)</attribute>
         </xpath>
         <xpath expr="//div[contains(@style,'margin-top:50px') and .//strong[contains(normalize-space(.), 'RECIBI CONFORME')]]"
-               position="replace">
+               position="before">
             <t t-if="docs and docs[0].equipment_assign_to == 'department' and docs[0].department_id">
                 <t t-set="signers" t-value="docs[0]._get_department_delivery_signers()"/>
                 <div style="margin-top:35px; font-size:13px;">
@@ -45,26 +42,10 @@
                     </t>
                 </div>
             </t>
-            <t t-else="">
-                <div style="margin-top:50px; text-align:center;">
-                    <div style="display:inline-block; vertical-align:top; margin-right:190px;">
-                        <div style="text-align:center;">_________________________________</div>
-                        <div style="display:inline-block; text-align:left; margin-top:5px;">
-                            <strong>ENTREGUE CONFORME:</strong><br/>
-                            <span t-out="docs[0].entregado_por_id.name or ''"/><br/>
-                            C.I. <span t-out="docs[0].entregado_por_id.identification_id or ''"/>
-                        </div>
-                    </div>
-                    <div style="display:inline-block; vertical-align:top;">
-                        <div style="text-align:center;">_________________________________</div>
-                        <div style="display:inline-block; text-align:left; margin-top:5px;">
-                            <strong>RECIBI CONFORME:</strong><br/>
-                            <span t-out="docs[0].employee_id.name or ''"/><br/>
-                            C.I. <span t-out="docs[0].employee_id.identification_id or ''"/>
-                        </div>
-                    </div>
-                </div>
-            </t>
+        </xpath>
+        <xpath expr="//div[contains(@style,'margin-top:50px') and .//strong[contains(normalize-space(.), 'RECIBI CONFORME')]]"
+               position="attributes">
+            <attribute name="t-if">not (docs and docs[0].equipment_assign_to == 'department' and docs[0].department_id)</attribute>
         </xpath>
     </template>
 </odoo>

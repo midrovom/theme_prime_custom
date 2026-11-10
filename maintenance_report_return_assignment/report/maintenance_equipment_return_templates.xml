@@ -1,26 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- El wizard de actas no se modifica. Si previamente se reasignó el
-         equipo a un empleado marcado como bodega, conservar el nombre del
-         colaborador que devolvió el equipo. Antes de la transferencia, usar
-         el empleado actual y no insertar una bodega ficticia en el acta. -->
+    <!-- No leer employee_id como el firmante de devolución: en modo Empleado
+         employee_id YA fue cambiado a bodega; en modo Departamento puede ser
+         False. El wizard guarda el último firmante expresamente. -->
     <template id="report_equipment_return_employee_origin"
               inherit_id="maintenance_report.report_equipment_return">
-        <xpath expr="//p//span[@t-out='docs[0].employee_id.name']/ancestor::p[1]" position="after">
-            <p t-if="docs[0].employee_id.es_bodega and docs[0].empleado_devolucion_anterior_id"
+        <xpath expr="//p//span[@t-out='docs[0].employee_id.name']/ancestor::p[1]"
+               position="after">
+            <p t-if="docs[0].devolucion_acta_departamento_id"
+               style="margin-top:8px; text-align:justify;">
+                <strong>Departamento responsable:</strong>
+                <span t-out="docs[0].devolucion_acta_departamento_id.name or ''"/>
+                <br/>
+                <strong>Recibido por:</strong>
+                <span t-out="docs[0].devolucion_acta_receptor_id.name or ''"/>
+            </p>
+            <p t-if="not docs[0].devolucion_acta_departamento_id and docs[0].employee_id.es_bodega and docs[0].devolucion_acta_empleado_id"
                style="margin-top:8px; text-align:justify;">
                 <strong>Bodega de devolución:</strong>
                 <span t-out="docs[0].employee_id.name or ''"/>
+                <br/>
+                <strong>Recibido por:</strong>
+                <span t-out="docs[0].devolucion_acta_receptor_id.name or ''"/>
             </p>
         </xpath>
-        <xpath expr="(//p//span[@t-out='docs[0].employee_id.name'])[1]" position="attributes">
-            <attribute name="t-out">(docs[0].empleado_devolucion_anterior_id.name if docs[0].employee_id.es_bodega and docs[0].empleado_devolucion_anterior_id else docs[0].employee_id.name) or ''</attribute>
+        <xpath expr="(//p//span[@t-out='docs[0].employee_id.name'])[1]"
+               position="attributes">
+            <attribute name="t-out">(docs[0].devolucion_acta_empleado_id.name or docs[0].empleado_devolucion_anterior_id.name or docs[0].employee_id.name or '')</attribute>
         </xpath>
-        <xpath expr="//strong[contains(normalize-space(.), 'ENTREGUE CONFORME')]/following-sibling::span[@t-out='docs[0].employee_id.name']" position="attributes">
-            <attribute name="t-out">(docs[0].empleado_devolucion_anterior_id.name if docs[0].employee_id.es_bodega and docs[0].empleado_devolucion_anterior_id else docs[0].employee_id.name) or ''</attribute>
+        <xpath expr="//strong[contains(normalize-space(.), 'ENTREGUE CONFORME')]/following-sibling::span[@t-out='docs[0].employee_id.name']"
+               position="attributes">
+            <attribute name="t-out">(docs[0].devolucion_acta_empleado_id.name or docs[0].empleado_devolucion_anterior_id.name or docs[0].employee_id.name or '')</attribute>
         </xpath>
-        <xpath expr="//strong[contains(normalize-space(.), 'ENTREGUE CONFORME')]/following-sibling::span[@t-out='docs[0].employee_id.identification_id']" position="attributes">
-            <attribute name="t-out">(docs[0].empleado_devolucion_anterior_id.identification_id if docs[0].employee_id.es_bodega and docs[0].empleado_devolucion_anterior_id else docs[0].employee_id.identification_id) or ''</attribute>
+        <xpath expr="//strong[contains(normalize-space(.), 'ENTREGUE CONFORME')]/following-sibling::span[@t-out='docs[0].employee_id.identification_id']"
+               position="attributes">
+            <attribute name="t-out">(docs[0].devolucion_acta_empleado_id.identification_id or docs[0].empleado_devolucion_anterior_id.identification_id or docs[0].employee_id.identification_id or '')</attribute>
         </xpath>
     </template>
 </odoo>

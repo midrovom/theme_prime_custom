@@ -3,14 +3,14 @@ from odoo import fields, models
 
 
 class MaintenanceEquipmentBodegaHistory(models.Model):
-    """Registro de los movimientos a bodega, inalterable desde la interfaz.
+    """Registro de movimientos a bodega y devoluciones departamentales.
 
     Además de las relaciones Many2one se guardan nombres al momento del
     movimiento, para que cambios futuros de nombre no reescriban la historia.
     """
 
     _name = 'maintenance.equipment.bodega.history'
-    _description = 'Historial de asignaciones de equipos a bodega'
+    _description = 'Historial de movimientos y devoluciones de equipos'
     _order = 'movement_date desc, id desc'
     _rec_name = 'equipment_id'
 
@@ -34,16 +34,26 @@ class MaintenanceEquipmentBodegaHistory(models.Model):
         'hr.department', string='Departamento anterior', readonly=True,
         ondelete='set null',
     )
+    movement_type = fields.Selection(
+        [('employee_to_warehouse', 'Devolución de empleado a bodega'),
+         ('department_return', 'Devolución de departamento sin cambio de asignación')],
+        string='Tipo de movimiento', default='employee_to_warehouse',
+        required=True, readonly=True, index=True,
+    )
     warehouse_employee_id = fields.Many2one(
-        'hr.employee', string='Bodega de devolución', required=True,
+        'hr.employee', string='Bodega de devolución',
         readonly=True, ondelete='restrict',
+    )
+    destination_department_id = fields.Many2one(
+        'hr.department', string='Departamento receptor', readonly=True,
+        ondelete='set null',
     )
     receiver_employee_id = fields.Many2one(
         'hr.employee', string='Recibido por (empleado)', readonly=True,
         ondelete='set null',
     )
     previous_receiver_employee_id = fields.Many2one(
-        'hr.employee', string='Receptor anterior en bodega', readonly=True,
+        'hr.employee', string='Receptor anterior', readonly=True,
         ondelete='set null',
     )
     registered_by_id = fields.Many2one(

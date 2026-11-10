@@ -8,13 +8,15 @@
             <!-- Pestaña posterior a Mantenimiento: únicamente historial de movimientos. -->
             <xpath expr="//page[@name='maintenance']" position="after">
                 <page string="Historial de movimiento" name="last_bodega_assignment">
-                    <separator string="Historial de movimientos a bodega"/>
+                    <separator string="Historial de movimientos"/>
                     <field name="bodega_historial_ids" nolabel="1" readonly="1">
                         <list create="0" edit="0" delete="0">
                             <field name="movement_date"/>
+                            <field name="movement_type"/>
                             <field name="previous_employee_name"/>
                             <field name="previous_department_name" optional="show"/>
-                            <field name="warehouse_name"/>
+                            <field name="destination_department_id" optional="show"/>
+                            <field name="warehouse_name" optional="show"/>
                             <field name="receiver_name"/>
                             <field name="previous_receiver_name" optional="hide"/>
                             <field name="registered_by_name"/>
