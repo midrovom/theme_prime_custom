@@ -5,7 +5,7 @@
         <field name="name">Asignar a bodega</field>
         <field name="model_id" ref="maintenance.model_maintenance_equipment"/>
         <field name="binding_model_id" eval="False"/>
-        <field name="active" eval="False"/>
+        <!-- Odoo 18: ir.actions.server no dispone de active; desactivar la vinculacion al menu Accion con binding_model_id=False. -->
         <field name="binding_view_types">list</field>
         <field name="state">code</field>
         <field name="code">action = records.action_open_bodega_assignment()</field>
