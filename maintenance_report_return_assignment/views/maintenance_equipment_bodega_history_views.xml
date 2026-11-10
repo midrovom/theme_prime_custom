@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de detalle de cada movimiento. Solo lectura, sin edición manual. -->
+    <record id="view_maintenance_equipment_bodega_history_form" model="ir.ui.view">
+        <field name="name">maintenance.equipment.bodega.history.form</field>
+        <field name="model">maintenance.equipment.bodega.history</field>
+        <field name="arch" type="xml">
+            <form string="Movimiento a bodega" create="0" edit="0" delete="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="equipment_id"/>
+                            <field name="company_id"/>
+                            <field name="movement_date"/>
+                        </group>
+                        <group>
+                            <field name="registered_by_name"/>
+                            <field name="registered_by_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Origen y destino">
+                            <field name="previous_employee_name"/>
+                            <field name="previous_employee_id"/>
+                            <field name="warehouse_name"/>
+                            <field name="warehouse_employee_id"/>
+                        </group>
+                        <group string="Recepción física">
+                            <field name="receiver_name"/>
+                            <field name="receiver_employee_id"/>
+                            <field name="previous_receiver_name"/>
+                            <field name="previous_receiver_employee_id"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

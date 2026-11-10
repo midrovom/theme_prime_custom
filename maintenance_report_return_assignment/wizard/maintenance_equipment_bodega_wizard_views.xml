@@ -16,9 +16,17 @@
                            options="{'no_create': True, 'no_open': True}"
                            invisible="equipment_count &lt;= 1"/>
                     <field name="bodega_employee_id" widget="many2one_avatar_employee"
-                           domain="[('es_bodega', '=', True), '|', ('company_id', '=', False), ('company_id', '=', company_id)]"
                            options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"
                            required="1"/>
+                    <field name="bodega_department_id" invisible="1"/>
+                    <field name="bodega_receptor_id" widget="many2one_avatar_employee"
+                           options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"
+                           readonly="not bodega_department_id"
+                           required="1"/>
+                    <div class="text-muted" invisible="not bodega_employee_id or bodega_department_id">
+                        La bodega seleccionada no tiene departamento configurado.
+                        Asigne un departamento a ese empleado para poder seleccionar al receptor.
+                    </div>
                 </group>
                 <footer>
                     <button name="action_confirm_assignment" type="object"

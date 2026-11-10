@@ -6,42 +6,43 @@ from odoo.exceptions import UserError
 class MaintenanceEquipment(models.Model):
     _inherit = 'maintenance.equipment'
 
-    # Se conservan los campos existentes de auditoría. En operaciones masivas,
-    # estos valores se actualizan por separado en CADA equipo seleccionado.
+    # Campos existentes: no cambiar nombres ni tipos para conservar los datos.
     empleado_devolucion_anterior_id = fields.Many2one(
-        'hr.employee',
-        string='Empleado anterior',
-        readonly=True,
-        copy=False,
+        'hr.employee', string='Empleado anterior', readonly=True, copy=False,
         tracking=True,
-        help='Empleado que tenía asignado el equipo antes de su última transferencia a bodega.',
+        help='Empleado del equipo antes de su última transferencia a bodega.',
     )
     bodega_asignado_por_id = fields.Many2one(
-        'res.users',
-        string='Registrado por',
-        readonly=True,
-        copy=False,
+        'res.users', string='Registrado por', readonly=True, copy=False,
         tracking=True,
-        help='Usuario de Odoo que realizó la última asignación del equipo a bodega.',
+        help='Usuario de Odoo que efectuó el último movimiento a bodega.',
     )
     bodega_asignacion_fecha = fields.Datetime(
-        string='Fecha de asignación a bodega',
-        readonly=True,
-        copy=False,
+        string='Fecha de asignación a bodega', readonly=True, copy=False,
         tracking=True,
+    )
+
+    # Último movimiento: el equipo queda a nombre de la BODEGA (employee_id),
+    # pero se identifica por separado a quien lo recibió físicamente.
+    bodega_destino_ultima_id = fields.Many2one(
+        'hr.employee', string='Bodega de devolución', readonly=True,
+        copy=False, tracking=True,
+    )
+    bodega_receptor_ultimo_id = fields.Many2one(
+        'hr.employee', string='Recibido por (empleado)', readonly=True,
+        copy=False, tracking=True,
+    )
+    bodega_historial_ids = fields.One2many(
+        'maintenance.equipment.bodega.history', 'equipment_id',
+        string='Historial de asignaciones a bodega', readonly=True,
+        copy=False,
     )
 
     def action_open_bodega_assignment(self):
-        """Permite abrir el mismo wizard para uno o varios equipos seleccionados.
-
-        Se invoca desde el smart button individual, desde el botón de la
-        cabecera de la lista o desde Acción > Asignar a bodega.
-        """
+        """Mismo wizard desde ficha, cabecera de lista y Acción masiva."""
         if not self:
             raise UserError(_('Seleccione al menos un equipo para asignar a bodega.'))
 
-        # La selección masiva debe tener una sola empresa para evitar transferir
-        # accidentalmente equipos de compañías diferentes a un mismo empleado.
         company_ids = {(equipment.company_id or self.env.company).id for equipment in self}
         if len(company_ids) != 1:
             raise UserError(_(

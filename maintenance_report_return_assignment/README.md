@@ -1,59 +1,48 @@
-# Maintenance Report — Asignación individual y masiva de equipos a bodega (Odoo 18)
+# Maintenance Report — Entregas a bodega con receptor e historial (Odoo 18)
 
-**Versión:** `18.0.1.8.0`. Actualiza el mismo módulo
-`maintenance_report_return_assignment` sin desinstalarlo.
+**Versión:** `18.0.1.9.0`  
+**Módulo técnico:** `maintenance_report_return_assignment`  
+**Actualiza el módulo instalado** (sin desinstalar).
 
-## Novedad en la versión 18.0.1.8.0
+## Novedades de la versión 18.0.1.9.0
 
-- La sección **Última asignación a bodega** se mueve desde el área superior
-  de la ficha de equipo a una **pestaña nueva**, ubicada inmediatamente
-  después de la pestaña **Mantenimiento** (`name="maintenance"`).
-- En esa pestaña permanecen, sin cambios, los campos de auditoría
-  **Empleado anterior**, **Registrado por** y **Fecha de asignación a bodega**.
-- No cambia el funcionamiento de los botones individuales y masivos ni el
-  flujo de actas, empleados y reasignación.
+1. En **Mantenimiento > Equipos > Asignar a bodega** (individual o masivo), debajo de **Bodega de devolución** se añadió **Equipo entregado a (empleado)**. El campo selecciona registros de `hr.employee` cuyo `department_id` sea igual al departamento del empleado de bodega seleccionado. Se aplica también el filtro de empresa. El campo se limpia al cambiar la bodega y es obligatorio.
+2. La bodega seleccionada debe tener un **departamento** en su ficha de empleado. De lo contrario, se muestra un aviso de configuración y se impide confirmar.
+3. El `maintenance.equipment.employee_id` **continúa siendo la bodega** elegida, por ejemplo **Bodega Sistema**. El empleado receptor solo identifica a **quién se entregó físicamente** el equipo dentro de ese departamento.
+4. En la ficha del equipo, inmediatamente **después de Mantenimiento**, la pestaña **Última asignación a bodega** muestra ahora **Empleado anterior**, **Bodega de devolución**, **Recibido por (empleado)**, **Registrado por** y **Fecha de asignación a bodega**.
+5. Bajo los campos anteriores hay un **Historial de movimientos a bodega** con una fila por equipo y operación. Guarda fecha, empleado anterior, bodega, receptor físico y usuario que registró, junto con una copia de los nombres de ese momento para conservar el contexto si luego se renombran.
+6. Si un equipo ya está en esa bodega, pero cambia el receptor, se permite registrar un **traspaso interno** como movimiento nuevo, sin alterar el empleado original guardado para el PDF. Si tanto bodega como receptor siguen iguales, se omite el equipo (no se duplica la historia).
+7. Se conserva el registro en el chatter del equipo. El historial estructurado tiene permisos de **solo lectura** desde la interfaz y está separado por empresas.
 
-## Funcionalidad conservada de la versión 18.0.1.7.0
+## Ejemplo
 
-- En **Equipos > vista de lista**, marcar las casillas de **uno o varios**
-  equipos. Aparece el botón de cabecera **Asignar a bodega** (sin necesidad
-  de entrar a cada ficha). También está disponible en **Acción > Asignar a
-  bodega** para listas personalizadas.
-- Abre un único wizard que muestra la **cantidad de equipos seleccionados**
-  y permite elegir **una bodega para todos**.
-- Los destinos siguen siendo empleados (`hr.employee`) con **Es bodega**
-  habilitado, y se filtran por empresa. No se usan contactos.
-- Cada equipo actualizado cambia `maintenance.equipment.employee_id` y
-  mantiene su **propio empleado anterior** en
-  `empleado_devolucion_anterior_id`; el tipo de asignación pasa a **Empleado**
-  (no Departamento), y guarda el usuario y la fecha en
-  `bodega_asignado_por_id` y `bodega_asignacion_fecha`.
-- Se escribe una nota individual en el historial de cada equipo modificado.
-- Los equipos ya asignados a la bodega elegida **no se modifican**; si todos
-  estaban asignados, se avisa y no se realiza ningún movimiento.
-- Se impide mezclar equipos de distintas empresas en un mismo lote.
-- El botón inteligente en el formulario de un único equipo **continúa**.
-- El wizard original del acta de devolución permanece **sin cambios**.
+- Equipo: Laptop HP
+- Empleado anterior: **Pepito Pérez**
+- Bodega de devolución: **Bodega Sistema** (`hr.employee`, departamento **Sistemas**, `es_bodega=True`)
+- Equipo entregado a: **Juan López** (empleado del departamento **Sistemas**)
+- Registrado por: **Administrador de Odoo** (usuario conectado)
 
-## Uso
+Después de confirmar:
 
-1. En **Empleados**, marcar **Es bodega** en Bodega Sistema.
-2. Abrir **Mantenimiento > Equipos** en vista de lista, seleccionar varios
-   equipos mediante sus casillas.
-3. Pulsar **Asignar a bodega** (o el menú **Acción > Asignar a bodega**).
-4. Seleccionar **Bodega Sistema** y confirmar una sola vez.
-5. En cada equipo, verificar **Empleado** y abrir la pestaña **Última
-   asignación a bodega**, ubicada después de **Mantenimiento**, para consultar
-   **Empleado anterior**, **Registrado por** y **Fecha de asignación a bodega**.
+- `maintenance.equipment.employee_id` = **Bodega Sistema**.
+- Última asignación: **Pepito Pérez → Bodega Sistema**, recibido por **Juan López** y registrado por el usuario conectado.
+- La tabla de historial conserva ese movimiento incluso si más adelante se registra otro.
+- El PDF de acta no cambia de wizard y conserva la persona original en el documento, como en versiones anteriores.
 
-## Actualización
+## Asignación masiva
 
-Reemplazar la carpeta existente, reiniciar Odoo y ejecutar la actualización
-`-u maintenance_report_return_assignment` o desde Aplicaciones.
-Mantener instalados `hr_maintenance`, `maintenance_report` y
-`maintenance_report_unifor`. No desinstalar antes de actualizar, para
-preservar los campos de auditoría y su información.
+Desde la lista de Equipos, marque varios registros y use **Asignar a bodega** desde la cabecera o desde **Acción**. Elija una bodega y un receptor del mismo departamento: cada equipo tendrá su **registro propio** con su empleado anterior, bodega, receptor, usuario y fecha.
 
-**Pruebas:** comprobaciones locales de lógica, XML, Python y empaquetado.
-Validar el botón en la vista de lista concreta utilizada en la base de Odoo 18
-antes de desplegar en producción.
+No se mezclan compañías. La selección y el departamento se validan tanto en el formulario como en el servidor.
+
+## Actualización y registros antiguos
+
+Sustituya los archivos del módulo actual, reinicie Odoo y actualice `maintenance_report_return_assignment` desde Aplicaciones o con `-u maintenance_report_return_assignment`. No lo desinstale.
+
+Se incluye una migración para conservar **una instantánea de la última asignación a bodega** existente en versiones antiguas cuando los datos permiten identificarla, sin inventar el receptor que antes no se guardaba. Movimientos todavía más antiguos solo quedan en el chatter, si están presentes: no se pueden reconstruir fielmente a partir de los tres campos de última asignación.
+
+**Dependencias conservadas:** `hr_maintenance`, `maintenance_report`, `maintenance_report_unifor`.
+
+## Validación
+
+Se verificó sintaxis Python, XML, referencias, contenido del ZIP y flujos de selección de departamento, cambio de receptor, reasignación individual y masiva con simulaciones locales. No se dispone de un servidor Odoo 18 ejecutándose aquí; verifique el flujo real antes de pasar a producción.

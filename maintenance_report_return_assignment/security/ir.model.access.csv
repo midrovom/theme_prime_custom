@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_equipment_bodega_assignment_user,equipment.bodega.assignment.user,model_maintenance_equipment_bodega_wizard,base.group_user,1,1,1,0
+access_maintenance_equipment_bodega_history_user,equipment.bodega.history.user,model_maintenance_equipment_bodega_history,base.group_user,1,0,0,0
