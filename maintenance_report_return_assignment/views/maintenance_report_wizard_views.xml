@@ -27,20 +27,18 @@
                        required="report_type == 'return' and not es_origen_departamento"
                        options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                 <field name="bodega_department_id" invisible="1"/>
-                <field name="receptor_department_ids" invisible="1"/>
-                <field name="receptor_filtered_department_ids" invisible="1"/>
                 <field name="receptor_department_filter_id"
                        string="Departamento receptor"
                        invisible="report_type != 'return' or not es_origen_departamento"
                        required="report_type == 'return' and es_origen_departamento"
                        options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
-                <!-- En Departamento: solo empleados del departamento receptor
-                     elegido (no necesita empleado-bodega).
-                     En Empleado: solo empleados del departamento de la bodega. -->
+                <!-- Dominio directo: departamento receptor seleccionado en devolucion
+                     departamental, o departamento de la bodega para empleados. -->
                 <field name="bodega_receptor_id" string="Equipo entregado a (empleado)"
                        widget="many2one_avatar_employee"
+                       domain="[('department_id', '=', receptor_department_filter_id or bodega_department_id), ('es_bodega', '=', False), ('id', '!=', bodega_employee_id)]"
                        invisible="report_type != 'return'"
-                       readonly="not receptor_filtered_department_ids"
+                       readonly="(es_origen_departamento and not receptor_department_filter_id) or (not es_origen_departamento and not bodega_department_id)"
                        required="report_type == 'return'"
                        options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                 <div class="text-muted"

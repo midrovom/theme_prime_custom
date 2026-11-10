@@ -43,35 +43,22 @@ class MaintenanceReportWizard(models.TransientModel):
         'hr.department', string='Departamento de bodega',
         compute='_compute_bodega_department', readonly=True,
     )
-    receptor_department_ids = fields.Many2many(
-        'hr.department', string='Departamentos habilitados para recepción',
-        compute='_compute_receptor_departments', readonly=True,
-        help='Para equipos individuales: departamento de la bodega elegida. '
-             'Para equipos por departamento: todos los departamentos de la '
-             'empresa del equipo, sin necesidad de seleccionar una bodega.',
-    )
     receptor_department_filter_id = fields.Many2one(
         'hr.department', string='Departamento receptor',
-        domain="[('id', 'in', receptor_department_ids)]",
-        help='En devoluciones de equipos asignados a departamentos, seleccione '
-             'el departamento que revisa y recibe el equipo. Se muestran '
-             'todos los departamentos de la empresa del equipo y sus '
-             'empleados, sin exigir una bodega en el departamento receptor.',
-    )
-    receptor_filtered_department_ids = fields.Many2many(
-        'hr.department', string='Departamentos disponibles para receptor',
-        compute='_compute_filtered_receptor_departments', readonly=True,
+        domain="['|', ('company_id', '=', False), ('company_id', '=', origen_empresa_id)]",
+        help='En devoluciones departamentales seleccione el departamento que '
+             'recibe/revisa el equipo. El campo Equipo entregado a mostrará '
+             'directamente sus empleados. La asignación del equipo no cambia.',
     )
     bodega_receptor_id = fields.Many2one(
         'hr.employee', string='Equipo entregado a (empleado)',
-        domain="[('department_id', 'in', receptor_filtered_department_ids), "
-               "('es_bodega', '=', False), ('id', '!=', bodega_employee_id), "
-               "'|', ('company_id', '=', False), "
-               "('company_id', '=', origen_empresa_id)]",
-        help='En devolución individual, receptor del departamento de la '
-             'bodega. En devolución departamental, colaborador del '
-             'Departamento receptor elegido, sin cambiar la asignación '
-             'departamental del equipo.',
+        # Dominio directo en el departamento seleccionado: evita depender de
+        # Many2many computados que no se actualizan siempre en el cliente.
+        domain="[('department_id', '=', receptor_department_filter_id or bodega_department_id), "
+               "('es_bodega', '=', False), ('id', '!=', bodega_employee_id)]",
+        help='Para equipos de departamento: empleados del Departamento receptor '
+             'seleccionado. Para equipos individuales: empleados del departamento '
+             'de la Bodega de devolución. No incluye empleados Es bodega.',
     )
 
     @staticmethod
@@ -103,45 +90,6 @@ class MaintenanceReportWizard(models.TransientModel):
     def _compute_bodega_department(self):
         for wizard in self:
             wizard.bodega_department_id = wizard.bodega_employee_id.department_id
-
-    @api.depends('es_origen_departamento', 'origen_empresa_id',
-                 'bodega_department_id')
-    def _compute_receptor_departments(self):
-        """Departamentos seleccionables para cada modalidad de devolución.
-
-        Departamento: todos los departamentos de la empresa, aunque ninguno
-        de sus empleados tenga marcado Es bodega. Empleado: solamente el
-        departamento de la bodega que se va a asignar al equipo.
-        """
-        for wizard in self:
-            if wizard.es_origen_departamento:
-                company = wizard.origen_empresa_id
-                wizard.receptor_department_ids = (
-                    self.env['hr.department'].search([
-                        '|', ('company_id', '=', False),
-                        ('company_id', '=', company.id),
-                    ]) if company else self.env['hr.department'].browse()
-                )
-            else:
-                wizard.receptor_department_ids = wizard.bodega_department_id
-
-    @api.depends('es_origen_departamento', 'receptor_department_ids',
-                 'receptor_department_filter_id')
-    def _compute_filtered_receptor_departments(self):
-        for wizard in self:
-            allowed = wizard.receptor_department_ids
-            if wizard.es_origen_departamento:
-                # Sin departamento seleccionado, no ofrecer receptores: el
-                # filtro es obligatorio para distinguir quién revisó el bien.
-                chosen = wizard.receptor_department_filter_id
-                wizard.receptor_filtered_department_ids = (
-                    allowed.filtered(lambda dep: dep == chosen)
-                    if chosen else False
-                )
-            else:
-                # En devolución individual se sigue usando exclusivamente
-                # el departamento de la bodega de devolución.
-                wizard.receptor_filtered_department_ids = allowed
 
     @api.model
     def default_get(self, field_names):

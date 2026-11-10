@@ -53,19 +53,24 @@ class MaintenanceEquipment(models.Model):
     )
 
     def _get_department_delivery_signers(self):
-        """Todos los empleados relacionados DIRECTAMENTE con el departamento.
+        """Firmantes del departamento y sus subdepartamentos, sin recortes.
 
-        No se filtra por company_id de cada empleado: en instalaciones con
-        fichas heredadas o multiempresa el campo company_id puede diferir,
-        aunque el empleado sí pertenece al departamento exacto del equipo.
-        Incluye también empleados archivados para no perder firmantes al
-        emitir/reimprimir actas de equipos históricos.
+        Se consultan en el momento de imprimir el PDF, para recoger todos
+        los empleados incluso si el departamento tiene equipos anidados en
+        subdepartamentos. No restringir por empresa del empleado: en varias
+        instalaciones el dato es compartido o difiere del equipo.
+
+        Incluir archivados mantiene la capacidad de reimprimir actas
+        históricas. En el documento se imprime una fila completa por firmante.
         """
         self.ensure_one()
         if self.equipment_assign_to != 'department' or not self.department_id:
             return self.env['hr.employee'].browse()
+        departments = self.env['hr.department'].sudo().with_context(
+            active_test=False
+        ).search([('id', 'child_of', self.department_id.id)])
         return self.env['hr.employee'].sudo().with_context(active_test=False).search([
-            ('department_id', '=', self.department_id.id),
+            ('department_id', 'in', departments.ids),
         ], order='name, id')
 
     def action_open_bodega_assignment(self):

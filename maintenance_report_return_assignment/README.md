@@ -1,7 +1,7 @@
 # Maintenance Report — Entrega y devolución de equipos con historial (Odoo 18)
 
 **Módulo:** `maintenance_report_return_assignment`  
-**Versión:** `18.0.1.16.0`  
+**Versión:** `18.0.1.17.0`  
 **Dependencias:** `hr_maintenance`, `maintenance_report`, `maintenance_report_unifor`.
 
 ## Acta de entrega: dos comportamientos independientes
@@ -59,3 +59,13 @@ Se eliminó el campo XML `active` de `ir.actions.server` en `data/maintenance_eq
 - Al confirmar la devolución por departamento se registra en historial: persona que entregó, departamento de origen, departamento receptor, empleado receptor, usuario y fecha; el equipo **no cambia** de departamento ni de empleado. El PDF también muestra el departamento y receptor de esa devolución.
 - **Devolución por empleado:** sin cambios; sigue requiriendo Bodega de devolución y empleado receptor del departamento de dicha bodega y actualiza `employee_id`.
 - Si ya había datos, actualice **el mismo módulo** sin desinstalar para preservar el historial. Verifique en una copia de la base de Odoo antes de producción.
+
+
+## Versión 18.0.1.17.0 — Selector directo y listado completo de firmas
+
+- **Devolución por departamento:** el dominio de **Equipo entregado a (empleado)** se basa directamente en el `Departamento receptor` seleccionado (sin dependencias de listas Many2many computadas en el wizard). Al cambiar el departamento se borra el receptor anterior y se listan los empleados activos vinculados al nuevo departamento; se excluyen los empleados con **Es bodega**. El botón permanece deshabilitado hasta escoger departamento; las validaciones al guardar siguen verificando que el receptor pertenece al departamento receptor y registrando el movimiento.
+- **Devolución por empleado:** el mismo campo muestra empleados del departamento de la bodega seleccionada. El equipo se reasigna a esa bodega y conserva su historial previo.
+- **Entrega por departamento:** los firmantes se obtienen de `hr.employee.department_id` del departamento del equipo **y de sus subdepartamentos**, sin filtrar por empresa del empleado y con empleados archivados para soportar reimpresiones históricas. Se sustituyó el bloque flotante por una tabla paginable: izquierda ENTREGUÉ CONFORME; a la derecha un nombre y cédula por fila con su espacio individual para firmar. No se altera la firma original en entrega por empleado.
+- No se cambian modelos de historial, datos existentes ni mecanismos de devolución individual/departamental. No es necesario reinstalar; actualizar el módulo conserva los movimientos.
+
+> Los empleados que no tengan asignado el departamento (ni uno de sus subdepartamentos) en su ficha de **Empleados** no pueden identificarse automáticamente como miembros del mismo. Si siguen faltando firmantes, revisar `department_id` en esas fichas.

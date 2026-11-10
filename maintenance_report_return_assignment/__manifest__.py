@@ -2,7 +2,7 @@
 {
     'name': 'Maintenance Report - Asignación a bodega',
     'summary': 'Devoluciones diferenciadas por empleado/departamento y trazabilidad permanente',
-    'version': '18.0.1.16.0',
+    'version': '18.0.1.17.0',
     'category': 'Maintenance',
     'license': 'LGPL-3',
     'depends': [

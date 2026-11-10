@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Entrega por empleado: NO reemplazar el texto ni las firmas originales.
-         Solamente se ocultan cuando el equipo se asigna por departamento. -->
+    <!-- Entrega individual: conserva el texto y el bloque de firmas originales. -->
     <template id="report_equipment_delivery_department_signatures"
               inherit_id="maintenance_report.report_equipment">
         <xpath expr="//p[.//span[@t-out='docs[0].employee_id.name']]" position="before">
@@ -16,51 +15,49 @@
         <xpath expr="//p[.//span[@t-out='docs[0].employee_id.name']]" position="attributes">
             <attribute name="t-if">not (docs and docs[0].equipment_assign_to == 'department' and docs[0].department_id)</attribute>
         </xpath>
-        <!-- Se conserva la ubicación y estructura horizontal de las firmas
-             originales. Solo para Departamento se sustituye el contenido:
-             ENTREGO a la izquierda, RECIBIO a la derecha; cada empleado
-             aparece en una fila con su propia línea de firma. -->
+
+        <!-- Para departamento se inserta una tabla de TRES columnas:
+             responsable que entrega | empleado receptor | espacio de firma.
+             No usar float ni div de altura fija: wkhtmltopdf puede cortar
+             el resto de personas cuando el contenido pasa a otra página. -->
         <xpath expr="//div[contains(@style,'margin-top:50px') and .//strong[contains(normalize-space(.), 'RECIBI CONFORME')]]"
                position="before">
             <t t-if="docs and docs[0].equipment_assign_to == 'department' and docs[0].department_id">
-                <!-- Sin limitar por company_id ni active: se listan todos los
-                     hr.employee directamente ligados al departamento del equipo. -->
                 <t t-set="signers" t-value="docs[0]._get_department_delivery_signers()"/>
-                <div style="margin-top:50px; width:100%; font-size:12px;">
-                    <!-- Dos secciones como el documento original; la lista derecha
-                         puede continuar en otra página si hay muchos empleados. -->
-                    <div style="float:left; width:34%; padding-right:12px;">
-                        <div style="margin-top:26px; width:92%; border-bottom:1px solid #333;"></div>
-                        <div style="padding-top:7px; text-align:left;">
-                            <strong>ENTREGUE CONFORME:</strong><br/>
-                            <span t-out="docs[0].entregado_por_id.name or ''"/><br/>
-                            C.I. <span t-out="docs[0].entregado_por_id.identification_id or ''"/>
-                        </div>
-                    </div>
-                    <div style="margin-left:37%; width:63%;">
-                        <strong>RECIBI CONFORME:</strong>
-                        <div style="font-size:11px; margin-top:3px; margin-bottom:6px;">
-                            Departamento <span t-out="docs[0].department_id.name"/>
-                        </div>
-                        <table style="width:100%; border-collapse:collapse; table-layout:fixed; border:0;">
-                            <tbody>
-                                <t t-foreach="signers" t-as="signer">
-                                    <tr style="page-break-inside:avoid;">
-                                        <td style="width:52%; vertical-align:bottom; padding:10px 8px 8px 0; border:0; text-align:left;">
-                                            <span t-out="signer.name"/><br/>
-                                            <span style="font-size:11px;">C.I. <span t-out="signer.identification_id or ''"/></span>
-                                        </td>
-                                        <td style="width:48%; vertical-align:bottom; padding:10px 0 8px 4px; border:0; text-align:center;">
-                                            <div style="height:20px; border-bottom:1px solid #333;"></div>
-                                            <span style="font-size:10px;">Firma</span>
-                                        </td>
-                                    </tr>
-                                </t>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div style="clear:both;"></div>
-                </div>
+                <table style="margin-top:45px; width:100%; border-collapse:collapse; font-size:11px; table-layout:fixed; page-break-inside:auto;">
+                    <thead style="display:table-header-group;">
+                        <tr>
+                            <th style="width:34%; padding:6px 6px 9px 0; border:0; text-align:left; vertical-align:top;">
+                                ENTREGUE CONFORME:
+                            </th>
+                            <th colspan="2" style="width:66%; padding:6px 0 9px 5px; border:0; text-align:left; vertical-align:top;">
+                                RECIBI CONFORME —
+                                <span t-out="docs[0].department_id.name or ''"/>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="signers" t-as="signer">
+                            <tr style="page-break-inside:avoid;">
+                                <td style="width:34%; border:0; padding:10px 10px 12px 0; vertical-align:top;">
+                                    <t t-if="signer_index == 0">
+                                        <div style="height:24px; border-bottom:1px solid #222; margin:0 12px 5px 0;"></div>
+                                        <strong><span t-out="docs[0].entregado_por_id.name or ''"/></strong><br/>
+                                        C.I. <span t-out="docs[0].entregado_por_id.identification_id or ''"/>
+                                    </t>
+                                </td>
+                                <td style="width:33%; border:0; padding:9px 7px 12px 5px; vertical-align:middle; text-align:left;">
+                                    <span t-out="signer.name or ''"/><br/>
+                                    C.I. <span t-out="signer.identification_id or ''"/>
+                                </td>
+                                <td style="width:33%; border:0; padding:9px 3px 12px 4px; vertical-align:bottom; text-align:center;">
+                                    <div style="min-height:25px; border-bottom:1px solid #222;"></div>
+                                    <span style="font-size:10px;">Firma</span>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
             </t>
         </xpath>
         <xpath expr="//div[contains(@style,'margin-top:50px') and .//strong[contains(normalize-space(.), 'RECIBI CONFORME')]]"
