@@ -46,17 +46,17 @@ class MaintenanceReportWizard(models.TransientModel):
     receptor_department_ids = fields.Many2many(
         'hr.department', string='Departamentos habilitados para recepción',
         compute='_compute_receptor_departments', readonly=True,
-        help='Para empleados: departamento de la bodega elegida. Para equipos '
-             'departamentales: departamentos que tengan empleados marcados '
-             'Es bodega, sin necesidad de seleccionar una bodega de destino.',
+        help='Para equipos individuales: departamento de la bodega elegida. '
+             'Para equipos por departamento: todos los departamentos de la '
+             'empresa del equipo, sin necesidad de seleccionar una bodega.',
     )
     receptor_department_filter_id = fields.Many2one(
-        'hr.department', string='Departamento receptor (opcional)',
+        'hr.department', string='Departamento receptor',
         domain="[('id', 'in', receptor_department_ids)]",
-        help='Solo para devoluciones por departamento. Déjelo vacío para ' 
-             'mostrar todos los empleados de departamentos que tengan ' 
-             'algún empleado marcado Es bodega, o seleccione un departamento ' 
-             'para restringir la lista de receptores.',
+        help='En devoluciones de equipos asignados a departamentos, seleccione '
+             'el departamento que revisa y recibe el equipo. Se muestran '
+             'todos los departamentos de la empresa del equipo y sus '
+             'empleados, sin exigir una bodega en el departamento receptor.',
     )
     receptor_filtered_department_ids = fields.Many2many(
         'hr.department', string='Departamentos disponibles para receptor',
@@ -68,9 +68,10 @@ class MaintenanceReportWizard(models.TransientModel):
                "('es_bodega', '=', False), ('id', '!=', bodega_employee_id), "
                "'|', ('company_id', '=', False), "
                "('company_id', '=', origen_empresa_id)]",
-        help='En devolución de empleado, receptor del departamento de la '
-             'bodega. En devolución departamental, receptor de uno de los '
-             'departamentos con bodega habilitada, sin cambiar la asignación.',
+        help='En devolución individual, receptor del departamento de la '
+             'bodega. En devolución departamental, colaborador del '
+             'Departamento receptor elegido, sin cambiar la asignación '
+             'departamental del equipo.',
     )
 
     @staticmethod
@@ -106,33 +107,41 @@ class MaintenanceReportWizard(models.TransientModel):
     @api.depends('es_origen_departamento', 'origen_empresa_id',
                  'bodega_department_id')
     def _compute_receptor_departments(self):
+        """Departamentos seleccionables para cada modalidad de devolución.
+
+        Departamento: todos los departamentos de la empresa, aunque ninguno
+        de sus empleados tenga marcado Es bodega. Empleado: solamente el
+        departamento de la bodega que se va a asignar al equipo.
+        """
         for wizard in self:
             if wizard.es_origen_departamento:
                 company = wizard.origen_empresa_id
-                if not company:
-                    wizard.receptor_department_ids = False
-                    continue
-                # Sin elegir bodega: reunir departamentos de empleados que
-                # tengan marcada Es bodega dentro de la empresa del equipo.
-                warehouses = self.env['hr.employee'].sudo().search([
-                    ('es_bodega', '=', True),
-                    ('department_id', '!=', False),
-                    '|', ('company_id', '=', False), ('company_id', '=', company.id),
-                ])
-                wizard.receptor_department_ids = warehouses.mapped('department_id').filtered(
-                    lambda dep: not dep.company_id or dep.company_id == company
+                wizard.receptor_department_ids = (
+                    self.env['hr.department'].search([
+                        '|', ('company_id', '=', False),
+                        ('company_id', '=', company.id),
+                    ]) if company else self.env['hr.department'].browse()
                 )
             else:
                 wizard.receptor_department_ids = wizard.bodega_department_id
 
-    @api.depends('receptor_department_ids', 'receptor_department_filter_id')
+    @api.depends('es_origen_departamento', 'receptor_department_ids',
+                 'receptor_department_filter_id')
     def _compute_filtered_receptor_departments(self):
         for wizard in self:
             allowed = wizard.receptor_department_ids
-            chosen = wizard.receptor_department_filter_id
-            wizard.receptor_filtered_department_ids = (
-                allowed.filtered(lambda dep: dep == chosen) if chosen else allowed
-            )
+            if wizard.es_origen_departamento:
+                # Sin departamento seleccionado, no ofrecer receptores: el
+                # filtro es obligatorio para distinguir quién revisó el bien.
+                chosen = wizard.receptor_department_filter_id
+                wizard.receptor_filtered_department_ids = (
+                    allowed.filtered(lambda dep: dep == chosen)
+                    if chosen else False
+                )
+            else:
+                # En devolución individual se sigue usando exclusivamente
+                # el departamento de la bodega de devolución.
+                wizard.receptor_filtered_department_ids = allowed
 
     @api.model
     def default_get(self, field_names):
@@ -211,45 +220,36 @@ class MaintenanceReportWizard(models.TransientModel):
         return kind, company_id
 
     def _check_department_receiver(self, equipments, company_id):
-        """Validar receptor departamental también en servidor (no solo dominio)."""
+        """Validar departamento/receptor en el servidor, además del dominio UI."""
         receiver = self.bodega_receptor_id
         department = equipments[0].department_id
+        destination = self.receptor_department_filter_id
         if not department:
             raise UserError(_('Los equipos necesitan un departamento de origen.'))
+        if not destination or not destination.exists():
+            raise UserError(_('Seleccione el Departamento receptor.'))
+        if destination.company_id and destination.company_id.id != company_id:
+            raise UserError(_(
+                'El Departamento receptor debe pertenecer a la empresa de los equipos.'
+            ))
         if not receiver or not receiver.exists():
-            raise UserError(_('Seleccione el empleado que recibe el equipo del departamento.'))
+            raise UserError(_(
+                'Seleccione un empleado de Departamento receptor para registrar '
+                'quién recibió o revisó el equipo.'
+            ))
         if receiver.es_bodega:
             raise UserError(_(
                 'Equipo entregado a no puede ser un empleado con "Es bodega".'
             ))
-        if (self.receptor_department_filter_id and
-                receiver.department_id != self.receptor_department_filter_id):
+        if receiver.department_id != destination:
             raise UserError(_(
                 'El empleado receptor debe pertenecer al departamento seleccionado: %s.'
-            ) % self.receptor_department_filter_id.display_name)
-        # En modo Departamento el receptor puede ser de Sistemas, RRHH u
-        # otro departamento con bodega configurada; no necesariamente del
-        # mismo departamento al que está asignado el equipo.
-        warehouse_in_receiver_department = self.env['hr.employee'].sudo().search([
-            ('es_bodega', '=', True),
-            ('department_id', '=', receiver.department_id.id if receiver.department_id else False),
-            '|', ('company_id', '=', False), ('company_id', '=', company_id),
-        ], limit=1)
-        if not warehouse_in_receiver_department:
-            raise UserError(_(
-                'El empleado receptor debe pertenecer a un departamento con '
-                'al menos un empleado marcado "Es bodega" (Sistemas, RRHH, etc.).'
-            ))
-        if (receiver.department_id.company_id and
-                receiver.department_id.company_id.id != company_id):
-            raise UserError(_('El departamento del receptor pertenece a otra empresa.'))
+            ) % destination.display_name)
         if receiver.company_id and receiver.company_id.id != company_id:
             raise UserError(_('El receptor pertenece a otra empresa.'))
         if department.company_id and department.company_id.id != company_id:
-            raise UserError(_('El departamento pertenece a otra empresa.'))
+            raise UserError(_('El departamento de origen pertenece a otra empresa.'))
         if self.bodega_employee_id:
-            # Un cliente RPC no debe poder ocultar una bodega en un movimiento
-            # departamental que, por definición, no tiene transferencia a bodega.
             raise UserError(_(
                 'Para equipos de departamento no seleccione Bodega de devolución.'
             ))
@@ -284,7 +284,7 @@ class MaintenanceReportWizard(models.TransientModel):
                 'movement_date': now,
                 'previous_employee_id': employee.id,
                 'previous_department_id': department.id,
-                'destination_department_id': receiver.department_id.id,
+                'destination_department_id': self.receptor_department_filter_id.id,
                 'warehouse_employee_id': False,
                 'receiver_employee_id': receiver.id,
                 'previous_receiver_employee_id': previous_receiver.id if previous_receiver else False,
@@ -305,7 +305,7 @@ class MaintenanceReportWizard(models.TransientModel):
                     'department': escape(department.display_name),
                     'employee': escape(employee.display_name),
                     'receiver': escape(receiver.display_name),
-                    'destination': escape(receiver.department_id.display_name),
+                    'destination': escape(self.receptor_department_filter_id.display_name),
                     'operator': escape(operator.display_name),
                 },
                 subtype_xmlid='mail.mt_note',

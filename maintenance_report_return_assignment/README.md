@@ -1,13 +1,13 @@
 # Maintenance Report — Entrega y devolución de equipos con historial (Odoo 18)
 
 **Módulo:** `maintenance_report_return_assignment`  
-**Versión:** `18.0.1.15.0`  
+**Versión:** `18.0.1.16.0`  
 **Dependencias:** `hr_maintenance`, `maintenance_report`, `maintenance_report_unifor`.
 
 ## Acta de entrega: dos comportamientos independientes
 
 - **Usado por = Empleado:** se mantiene el reporte y el flujo original de entrega, con la firma del empleado al que está asignado el equipo.
-- **Usado por = Departamento:** el PDF muestra al departamento responsable y una línea de firma **RECIBÍ CONFORME** para cada empleado activo del departamento. No asigna los equipos a empleados específicos.
+- **Usado por = Departamento:** el PDF muestra al departamento responsable y una línea de firma **RECIBÍ CONFORME** para cada empleado asociado directamente al departamento, incluidos los registros archivados. No asigna los equipos a empleados específicos.
 - Si se seleccionan varios equipos departamentales para una misma acta, todos deben pertenecer al mismo departamento. La entrega de uniformes no se altera.
 
 ## Acta de devolución: flujos diferentes
@@ -16,7 +16,7 @@
 |---|---|---|
 | **Empleado actual** | Autocompletado, solo lectura | Seleccionable entre empleados del departamento del equipo |
 | **Bodega de devolución** | Obligatoria, solo empleados con **Es bodega** | **Oculta**, no se exige ni se transfiere a bodega |
-| **Equipo entregado a (empleado)** | Empleados del departamento de la bodega elegida, excluidos los marcados **Es bodega** | Empleados de departamentos con al menos un empleado **Es bodega** en esa empresa (por ejemplo, Sistemas o RRHH), excluidos los empleados-bodega |
+| **Equipo entregado a (empleado)** | Empleados del departamento de la bodega elegida, excluidos los marcados **Es bodega** | Empleados del **Departamento receptor** seleccionado (por ejemplo, Sistemas o RRHH), excluidos los empleados-bodega |
 | **Al generar PDF** | `employee_id` se actualiza al empleado-bodega, `equipment_assign_to = employee`, se registra quién devuelve y quién recibe | Se conserva `equipment_assign_to = department`, `department_id` y `employee_id` tal como estaban; registra quién devuelve y quién recibe |
 | **Acta PDF** | Firma del empleado anterior, no de Bodega Sistema | Firma del empleado seleccionado que devuelve, aunque el equipo no tenga un `employee_id` |
 | **Historial** | Tipo **Devolución de empleado a bodega**, empleado anterior, bodega, receptor, usuario, fecha | Tipo **Devolución de departamento sin cambio de asignación**, departamento de origen, empleado que devuelve, departamento del receptor, receptor, usuario y fecha |
@@ -44,10 +44,18 @@ Migraciones 18.0.1.13.0: el campo opcional de bodega en el historial permite mov
 
 Se eliminó el campo XML `active` de `ir.actions.server` en `data/maintenance_equipment_bodega_server_action.xml`, porque Odoo 18 no lo admite. La acción antigua continúa sin aparecer en el menú **Acción** al dejar `binding_model_id=False`. No se modifican las devoluciones, las entregas, las validaciones ni el historial de movimientos.
 
-## Versión 18.0.1.15.0 — Firmas de entrega y filtro de receptores
+## Versión 18.0.1.16.0 — Firmas de entrega y filtro de receptores
 
 - **Entrega individual:** permanece idéntica a la plantilla original.
-- **Entrega por departamento:** después del texto de compromiso aparece el bloque original de firmas en dos secciones horizontales: **ENTREGUE CONFORME** a la izquierda y **RECIBI CONFORME** a la derecha. Los miembros activos del departamento se muestran uno debajo de otro, con nombre y cédula a la izquierda y línea individual de firma a la derecha. Se usa tabla HTML compatible con wkhtmltopdf.
+- **Entrega por departamento:** después del texto de compromiso aparece el bloque original de firmas en dos secciones horizontales: **ENTREGUE CONFORME** a la izquierda y **RECIBI CONFORME** a la derecha. Todos los empleados vinculados directamente al departamento se muestran uno debajo de otro, con nombre y cédula a la izquierda y línea individual de firma a la derecha. Se usa tabla HTML compatible con wkhtmltopdf.
 - **Devolución por empleado:** Bodega de devolución es obligatoria; solo puede recibir un empleado no-bodega del departamento de esa bodega; el equipo pasa a la bodega y se registra el historial.
-- **Devolución por departamento:** nuevo campo opcional **Departamento receptor (opcional)**. Sin seleccionar un departamento, **Equipo entregado a** ofrece empleados no-bodega de todos los departamentos de la empresa con al menos un empleado marcado **Es bodega**. Al elegir un departamento, la selección se limita a este. El servidor valida la relación aunque se omita el filtro de la interfaz. El equipo continúa asignado al departamento, y se guarda el movimiento en el historial.
+- **Devolución por departamento (modificada en 18.0.1.16.0):** **Departamento receptor** es obligatorio y ofrece los departamentos de la empresa (incluidos departamentos compartidos). **Equipo entregado a** solo ofrece empleados del departamento seleccionado, excluidos los marcados Es bodega. No es necesario que el departamento receptor tenga una bodega marcada. Se conserva la asignación de origen del equipo y se guarda quién entregó y quién revisó en el historial.
 - No se vuelven a activar las acciones antiguas de asignación a bodega. Se conserva la corrección de `ir.actions.server` en Odoo 18.
+
+## Versión 18.0.1.16.0 — Departamento receptor y todos los firmantes
+
+- **Entrega de equipos por departamento:** la lista RECIBÍ CONFORME se basa exclusivamente en la relación `hr.employee.department_id` con el departamento del equipo. Se incluyen empleados archivados y se elimina el filtro por empresa de su ficha para que no falte ningún empleado vinculado; no se agregan miembros de otros departamentos. Se mantiene la entrega individual original.
+- **Devolución de equipos por departamento:** `Departamento receptor` ya no es opcional; muestra los departamentos pertenecientes a la empresa del equipo y los compartidos (`company_id` vacío), sin exigir que tengan personal marcado `Es bodega`. `Equipo entregado a` muestra únicamente los empleados de ese departamento, excluyendo los marcados `Es bodega`. Se verifica en el servidor, independientemente de los dominios del formulario.
+- Al confirmar la devolución por departamento se registra en historial: persona que entregó, departamento de origen, departamento receptor, empleado receptor, usuario y fecha; el equipo **no cambia** de departamento ni de empleado. El PDF también muestra el departamento y receptor de esa devolución.
+- **Devolución por empleado:** sin cambios; sigue requiriendo Bodega de devolución y empleado receptor del departamento de dicha bodega y actualiza `employee_id`.
+- Si ya había datos, actualice **el mismo módulo** sin desinstalar para preservar el historial. Verifique en una copia de la base de Odoo antes de producción.

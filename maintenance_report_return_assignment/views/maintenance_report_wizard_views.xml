@@ -30,16 +30,17 @@
                 <field name="receptor_department_ids" invisible="1"/>
                 <field name="receptor_filtered_department_ids" invisible="1"/>
                 <field name="receptor_department_filter_id"
-                       string="Departamento receptor (opcional)"
+                       string="Departamento receptor"
                        invisible="report_type != 'return' or not es_origen_departamento"
+                       required="report_type == 'return' and es_origen_departamento"
                        options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
-                <!-- En departamento: sin filtro, empleados de todos los
-                     departamentos que tengan bodega; con filtro, solo uno.
-                     En empleado: únicamente el departamento de la bodega. -->
+                <!-- En Departamento: solo empleados del departamento receptor
+                     elegido (no necesita empleado-bodega).
+                     En Empleado: solo empleados del departamento de la bodega. -->
                 <field name="bodega_receptor_id" string="Equipo entregado a (empleado)"
                        widget="many2one_avatar_employee"
                        invisible="report_type != 'return'"
-                       readonly="not receptor_department_ids"
+                       readonly="not receptor_filtered_department_ids"
                        required="report_type == 'return'"
                        options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                 <div class="text-muted"
@@ -48,8 +49,8 @@
                 </div>
                 <div class="text-muted"
                      invisible="report_type != 'return' or not es_origen_departamento">
-                    Sin filtro de departamento, se muestran los empleados de todos los
-                    departamentos que tengan alguna bodega marcada. El equipo no cambia su asignación.
+                    Seleccione el departamento que recibirá/revisará el equipo y después
+                    el empleado correspondiente. El equipo seguirá asignado a su departamento original.
                 </div>
             </xpath>
         </field>

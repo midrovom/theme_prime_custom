@@ -23,6 +23,8 @@
         <xpath expr="//div[contains(@style,'margin-top:50px') and .//strong[contains(normalize-space(.), 'RECIBI CONFORME')]]"
                position="before">
             <t t-if="docs and docs[0].equipment_assign_to == 'department' and docs[0].department_id">
+                <!-- Sin limitar por company_id ni active: se listan todos los
+                     hr.employee directamente ligados al departamento del equipo. -->
                 <t t-set="signers" t-value="docs[0]._get_department_delivery_signers()"/>
                 <div style="margin-top:50px; width:100%; font-size:12px;">
                     <!-- Dos secciones como el documento original; la lista derecha
