@@ -16,30 +16,48 @@
         <xpath expr="//p[.//span[@t-out='docs[0].employee_id.name']]" position="attributes">
             <attribute name="t-if">not (docs and docs[0].equipment_assign_to == 'department' and docs[0].department_id)</attribute>
         </xpath>
+        <!-- Se conserva la ubicación y estructura horizontal de las firmas
+             originales. Solo para Departamento se sustituye el contenido:
+             ENTREGO a la izquierda, RECIBIO a la derecha; cada empleado
+             aparece en una fila con su propia línea de firma. -->
         <xpath expr="//div[contains(@style,'margin-top:50px') and .//strong[contains(normalize-space(.), 'RECIBI CONFORME')]]"
                position="before">
             <t t-if="docs and docs[0].equipment_assign_to == 'department' and docs[0].department_id">
                 <t t-set="signers" t-value="docs[0]._get_department_delivery_signers()"/>
-                <div style="margin-top:35px; font-size:13px;">
-                    <div style="page-break-inside:avoid; margin-bottom:35px;">
-                        __________________________________<br/>
-                        <strong>ENTREGUE CONFORME:</strong><br/>
-                        <span t-out="docs[0].entregado_por_id.name or ''"/><br/>
-                        C.I. <span t-out="docs[0].entregado_por_id.identification_id or ''"/>
-                    </div>
-                    <h4 style="text-align:left; margin-bottom:16px; font-size:13px;">
-                        RECIBI CONFORME — EMPLEADOS DEL DEPARTAMENTO
-                        <span t-out="docs[0].department_id.name"/>
-                    </h4>
-                    <t t-foreach="signers" t-as="signer">
-                        <div style="display:inline-block; vertical-align:top; width:47%;
-                                    margin-right:2%; padding-top:24px; margin-bottom:28px;
-                                    page-break-inside:avoid;">
-                            __________________________________<br/>
-                            <span t-out="signer.name"/><br/>
-                            C.I. <span t-out="signer.identification_id or ''"/>
+                <div style="margin-top:50px; width:100%; font-size:12px;">
+                    <!-- Dos secciones como el documento original; la lista derecha
+                         puede continuar en otra página si hay muchos empleados. -->
+                    <div style="float:left; width:34%; padding-right:12px;">
+                        <div style="margin-top:26px; width:92%; border-bottom:1px solid #333;"></div>
+                        <div style="padding-top:7px; text-align:left;">
+                            <strong>ENTREGUE CONFORME:</strong><br/>
+                            <span t-out="docs[0].entregado_por_id.name or ''"/><br/>
+                            C.I. <span t-out="docs[0].entregado_por_id.identification_id or ''"/>
                         </div>
-                    </t>
+                    </div>
+                    <div style="margin-left:37%; width:63%;">
+                        <strong>RECIBI CONFORME:</strong>
+                        <div style="font-size:11px; margin-top:3px; margin-bottom:6px;">
+                            Departamento <span t-out="docs[0].department_id.name"/>
+                        </div>
+                        <table style="width:100%; border-collapse:collapse; table-layout:fixed; border:0;">
+                            <tbody>
+                                <t t-foreach="signers" t-as="signer">
+                                    <tr style="page-break-inside:avoid;">
+                                        <td style="width:52%; vertical-align:bottom; padding:10px 8px 8px 0; border:0; text-align:left;">
+                                            <span t-out="signer.name"/><br/>
+                                            <span style="font-size:11px;">C.I. <span t-out="signer.identification_id or ''"/></span>
+                                        </td>
+                                        <td style="width:48%; vertical-align:bottom; padding:10px 0 8px 4px; border:0; text-align:center;">
+                                            <div style="height:20px; border-bottom:1px solid #333;"></div>
+                                            <span style="font-size:10px;">Firma</span>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="clear:both;"></div>
                 </div>
             </t>
         </xpath>

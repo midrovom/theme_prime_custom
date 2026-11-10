@@ -1,7 +1,7 @@
 # Maintenance Report — Entrega y devolución de equipos con historial (Odoo 18)
 
 **Módulo:** `maintenance_report_return_assignment`  
-**Versión:** `18.0.1.14.0`  
+**Versión:** `18.0.1.15.0`  
 **Dependencias:** `hr_maintenance`, `maintenance_report`, `maintenance_report_unifor`.
 
 ## Acta de entrega: dos comportamientos independientes
@@ -43,3 +43,11 @@ Migraciones 18.0.1.13.0: el campo opcional de bodega en el historial permite mov
 ## Corrección 18.0.1.14.0 — actualización de Odoo 18
 
 Se eliminó el campo XML `active` de `ir.actions.server` en `data/maintenance_equipment_bodega_server_action.xml`, porque Odoo 18 no lo admite. La acción antigua continúa sin aparecer en el menú **Acción** al dejar `binding_model_id=False`. No se modifican las devoluciones, las entregas, las validaciones ni el historial de movimientos.
+
+## Versión 18.0.1.15.0 — Firmas de entrega y filtro de receptores
+
+- **Entrega individual:** permanece idéntica a la plantilla original.
+- **Entrega por departamento:** después del texto de compromiso aparece el bloque original de firmas en dos secciones horizontales: **ENTREGUE CONFORME** a la izquierda y **RECIBI CONFORME** a la derecha. Los miembros activos del departamento se muestran uno debajo de otro, con nombre y cédula a la izquierda y línea individual de firma a la derecha. Se usa tabla HTML compatible con wkhtmltopdf.
+- **Devolución por empleado:** Bodega de devolución es obligatoria; solo puede recibir un empleado no-bodega del departamento de esa bodega; el equipo pasa a la bodega y se registra el historial.
+- **Devolución por departamento:** nuevo campo opcional **Departamento receptor (opcional)**. Sin seleccionar un departamento, **Equipo entregado a** ofrece empleados no-bodega de todos los departamentos de la empresa con al menos un empleado marcado **Es bodega**. Al elegir un departamento, la selección se limita a este. El servidor valida la relación aunque se omita el filtro de la interfaz. El equipo continúa asignado al departamento, y se guarda el movimiento en el historial.
+- No se vuelven a activar las acciones antiguas de asignación a bodega. Se conserva la corrección de `ir.actions.server` en Odoo 18.

@@ -50,9 +50,21 @@ class MaintenanceReportWizard(models.TransientModel):
              'departamentales: departamentos que tengan empleados marcados '
              'Es bodega, sin necesidad de seleccionar una bodega de destino.',
     )
+    receptor_department_filter_id = fields.Many2one(
+        'hr.department', string='Departamento receptor (opcional)',
+        domain="[('id', 'in', receptor_department_ids)]",
+        help='Solo para devoluciones por departamento. Déjelo vacío para ' 
+             'mostrar todos los empleados de departamentos que tengan ' 
+             'algún empleado marcado Es bodega, o seleccione un departamento ' 
+             'para restringir la lista de receptores.',
+    )
+    receptor_filtered_department_ids = fields.Many2many(
+        'hr.department', string='Departamentos disponibles para receptor',
+        compute='_compute_filtered_receptor_departments', readonly=True,
+    )
     bodega_receptor_id = fields.Many2one(
         'hr.employee', string='Equipo entregado a (empleado)',
-        domain="[('department_id', 'in', receptor_department_ids), "
+        domain="[('department_id', 'in', receptor_filtered_department_ids), "
                "('es_bodega', '=', False), ('id', '!=', bodega_employee_id), "
                "'|', ('company_id', '=', False), "
                "('company_id', '=', origen_empresa_id)]",
@@ -113,6 +125,15 @@ class MaintenanceReportWizard(models.TransientModel):
             else:
                 wizard.receptor_department_ids = wizard.bodega_department_id
 
+    @api.depends('receptor_department_ids', 'receptor_department_filter_id')
+    def _compute_filtered_receptor_departments(self):
+        for wizard in self:
+            allowed = wizard.receptor_department_ids
+            chosen = wizard.receptor_department_filter_id
+            wizard.receptor_filtered_department_ids = (
+                allowed.filtered(lambda dep: dep == chosen) if chosen else allowed
+            )
+
     @api.model
     def default_get(self, field_names):
         values = super().default_get(field_names)
@@ -144,10 +165,15 @@ class MaintenanceReportWizard(models.TransientModel):
         else:
             self.empleado_actual_id = False
         self.bodega_employee_id = False
+        self.receptor_department_filter_id = False
         self.bodega_receptor_id = False
 
     @api.onchange('bodega_employee_id')
     def _onchange_bodega_employee_id_return(self):
+        self.bodega_receptor_id = False
+
+    @api.onchange('receptor_department_filter_id')
+    def _onchange_receptor_department_filter_id(self):
         self.bodega_receptor_id = False
 
     def _check_return_source(self, equipments):
@@ -196,6 +222,11 @@ class MaintenanceReportWizard(models.TransientModel):
             raise UserError(_(
                 'Equipo entregado a no puede ser un empleado con "Es bodega".'
             ))
+        if (self.receptor_department_filter_id and
+                receiver.department_id != self.receptor_department_filter_id):
+            raise UserError(_(
+                'El empleado receptor debe pertenecer al departamento seleccionado: %s.'
+            ) % self.receptor_department_filter_id.display_name)
         # En modo Departamento el receptor puede ser de Sistemas, RRHH u
         # otro departamento con bodega configurada; no necesariamente del
         # mismo departamento al que está asignado el equipo.

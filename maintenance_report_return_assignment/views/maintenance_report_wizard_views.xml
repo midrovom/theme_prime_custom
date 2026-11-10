@@ -28,8 +28,14 @@
                        options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                 <field name="bodega_department_id" invisible="1"/>
                 <field name="receptor_department_ids" invisible="1"/>
-                <!-- En departamento, departamentos con bodega configurada; en empleado,
-                     departamento de la bodega elegida. Nunca empleados-bodega. -->
+                <field name="receptor_filtered_department_ids" invisible="1"/>
+                <field name="receptor_department_filter_id"
+                       string="Departamento receptor (opcional)"
+                       invisible="report_type != 'return' or not es_origen_departamento"
+                       options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                <!-- En departamento: sin filtro, empleados de todos los
+                     departamentos que tengan bodega; con filtro, solo uno.
+                     En empleado: únicamente el departamento de la bodega. -->
                 <field name="bodega_receptor_id" string="Equipo entregado a (empleado)"
                        widget="many2one_avatar_employee"
                        invisible="report_type != 'return'"
@@ -42,8 +48,8 @@
                 </div>
                 <div class="text-muted"
                      invisible="report_type != 'return' or not es_origen_departamento">
-                    Devolución departamental: se registra quién devuelve y quién recibe
-                    dentro de un departamento con bodega habilitada, sin trasladar el equipo ni cambiar su asignación.
+                    Sin filtro de departamento, se muestran los empleados de todos los
+                    departamentos que tengan alguna bodega marcada. El equipo no cambia su asignación.
                 </div>
             </xpath>
         </field>
