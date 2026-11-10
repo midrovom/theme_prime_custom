@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Maintenance Report - Asignación a bodega',
-    'summary': 'Botón inteligente para devolver equipos a empleados marcados como bodega y registrar al usuario responsable',
-    'version': '18.0.1.6.0',
+    'summary': 'Asignación individual y masiva de equipos a empleados marcados como bodega, con auditoría',
+    'version': '18.0.1.7.0',
     'category': 'Maintenance',
     'license': 'LGPL-3',
     'depends': [
@@ -14,6 +14,8 @@
         'security/ir.model.access.csv',
         'views/hr_employee_views.xml',
         'views/maintenance_equipment_views.xml',
+        'views/maintenance_equipment_list_views.xml',
+        'data/maintenance_equipment_bodega_server_action.xml',
         'wizard/maintenance_equipment_bodega_wizard_views.xml',
         'report/maintenance_equipment_return_templates.xml',
     ],

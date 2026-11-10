@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- En Odoo 18, los botones de list/header se muestran al seleccionar
+         uno o más registros. Se ejecutan sobre TODO el recordset seleccionado. -->
+    <record id="view_maintenance_equipment_list_bodega_assignment" model="ir.ui.view">
+        <field name="name">maintenance.equipment.list.bodega.assignment</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[1]" position="before">
+                <header>
+                    <button name="action_open_bodega_assignment" type="object"
+                            string="Asignar a bodega" class="btn-primary"/>
+                </header>
+            </xpath>
+        </field>
+    </record>
+</odoo>
