@@ -1,8 +1,15 @@
 # Maintenance Report — Entregas a bodega con receptor e historial (Odoo 18)
 
-**Versión:** `18.0.1.10.0`  
+**Versión:** `18.0.1.11.0`  
 **Módulo técnico:** `maintenance_report_return_assignment`  
 **Actualiza el módulo instalado** (sin desinstalar).
+
+## Cambio de la versión 18.0.1.11.0
+
+- **Equipo entregado a (empleado)** solo muestra empleados del mismo departamento de **Bodega de devolución** que **NO** tengan marcada la casilla **Es bodega**. También excluye explícitamente al empleado seleccionado como bodega.
+- Si dentro del departamento hay varios empleados con **Es bodega**, ninguno puede seleccionarse como receptor.
+- Se valida igualmente al confirmar, incluso en asignación masiva o a través de llamadas RPC: no es posible registrar como receptor un empleado marcado **Es bodega**.
+- El equipo continúa asignado a la bodega seleccionada; los demás campos, el historial, la pestaña y el PDF no cambian.
 
 ## Cambio visual de la versión 18.0.1.10.0
 
@@ -13,7 +20,7 @@
 
 ## Funcionalidad conservada de la versión 18.0.1.9.0
 
-1. En **Mantenimiento > Equipos > Asignar a bodega** (individual o masivo), debajo de **Bodega de devolución** se añadió **Equipo entregado a (empleado)**. El campo selecciona registros de `hr.employee` cuyo `department_id` sea igual al departamento del empleado de bodega seleccionado. Se aplica también el filtro de empresa. El campo se limpia al cambiar la bodega y es obligatorio.
+1. En **Mantenimiento > Equipos > Asignar a bodega** (individual o masivo), debajo de **Bodega de devolución** se añadió **Equipo entregado a (empleado)**. El campo selecciona registros de `hr.employee` cuyo `department_id` sea igual al departamento del empleado de bodega seleccionado y que **no** estén marcados como **Es bodega**. Se aplica también el filtro de empresa. El campo se limpia al cambiar la bodega y es obligatorio.
 2. La bodega seleccionada debe tener un **departamento** en su ficha de empleado. De lo contrario, se muestra un aviso de configuración y se impide confirmar.
 3. El `maintenance.equipment.employee_id` **continúa siendo la bodega** elegida, por ejemplo **Bodega Sistema**. El empleado receptor solo identifica a **quién se entregó físicamente** el equipo dentro de ese departamento.
 4. En la ficha del equipo, inmediatamente **después de Mantenimiento**, la pestaña **Historial de movimiento** presenta solo el apartado **Historial de movimientos a bodega**.

@@ -2,7 +2,7 @@
 {
     'name': 'Maintenance Report - Asignación a bodega',
     'summary': 'Asignación a bodega con receptor por departamento e historial permanente de movimientos',
-    'version': '18.0.1.10.0',
+    'version': '18.0.1.11.0',
     'category': 'Maintenance',
     'license': 'LGPL-3',
     'depends': [

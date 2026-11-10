@@ -39,8 +39,8 @@ class MaintenanceEquipmentBodegaWizard(models.TransientModel):
     )
     bodega_receptor_id = fields.Many2one(
         'hr.employee', string='Equipo entregado a (empleado)', required=True,
-        domain="[('department_id', '=', bodega_department_id), '|', ('company_id', '=', False), ('company_id', '=', company_id)]",
-        help='Empleado que recibió físicamente los equipos. Solo se muestran los del departamento de la bodega. El equipo queda asignado a la bodega.',
+        domain="[('department_id', '=', bodega_department_id), ('es_bodega', '=', False), ('id', '!=', bodega_employee_id), '|', ('company_id', '=', False), ('company_id', '=', company_id)]",
+        help='Empleado que recibió físicamente los equipos. Solo aparecen empleados del departamento de la bodega que NO tengan marcada la casilla Es bodega. El equipo queda asignado a la bodega.',
     )
 
     @api.depends('equipment_ids', 'equipment_id')
@@ -78,6 +78,13 @@ class MaintenanceEquipmentBodegaWizard(models.TransientModel):
             ) % destination.display_name)
         if not receiver or not receiver.exists():
             raise UserError(_('Seleccione al empleado que recibió el equipo en la bodega.'))
+        # También validar en servidor: una bodega no puede figurar como receptor,
+        # aunque se haya enviado el ID mediante RPC o una vista personalizada.
+        if receiver.es_bodega or receiver == destination:
+            raise UserError(_(
+                'El empleado receptor no puede tener marcada la casilla "Es bodega". '
+                'Seleccione otro empleado del departamento de la bodega.'
+            ))
         if receiver.department_id != destination.department_id:
             raise UserError(_(
                 'El empleado receptor debe pertenecer al departamento "%s" de la bodega.'
