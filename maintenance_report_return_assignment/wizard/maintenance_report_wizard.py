@@ -265,6 +265,65 @@ class MaintenanceReportWizard(models.TransientModel):
                 subtype_xmlid='mail.mt_note',
             )
 
+    def _record_delivery_history(self, equipments):
+        """Una fila por equipo al generar el acta de entrega.
+
+        Los campos employee_id/department_id NO se modifican: la entrega
+        documenta la asignación existente. Se guarda la lista de firmantes
+        del momento, además de las relaciones y los nombres históricos.
+        """
+        self.ensure_one()
+        History = self.env['maintenance.equipment.bodega.history'].sudo()
+        token = 'delivery-wizard-%s' % self.id
+        existing = set(History.search([
+            ('delivery_wizard_token', '=', token),
+            ('equipment_id', 'in', equipments.ids),
+        ]).mapped('equipment_id').ids)
+        operator = self.env.user
+        sender = self.entregado_por_id
+        now = fields.Datetime.now()
+        for equipment in equipments:
+            if equipment.id in existing:
+                continue
+            is_department = equipment.equipment_assign_to == 'department' and bool(equipment.department_id)
+            receiver_employee = equipment.employee_id if not is_department else False
+            receiver_department = equipment.department_id if is_department else False
+            recipient = receiver_department or receiver_employee
+            # Respetar el flujo original incluso si una ficha heredada carece
+            # de destinatario: registrar la entrega sin inventar una persona.
+            signers = equipment._get_department_delivery_signers() if is_department else self.env['hr.employee'].browse()
+            signer_snapshot = '\n'.join(
+                '%s — C.I. %s' % (e.display_name, e.identification_id or '')
+                for e in signers
+            ) if is_department else False
+            values = {
+                'equipment_id': equipment.id,
+                'company_id': (equipment.company_id or self.env.company).id,
+                'movement_date': now,
+                'movement_type': 'department_delivery' if is_department else 'employee_delivery',
+                'delivery_wizard_token': token,
+                'delivery_sender_employee_id': sender.id,
+                'delivery_target_employee_id': receiver_employee.id if receiver_employee else False,
+                'delivery_target_department_id': receiver_department.id if receiver_department else False,
+                'delivery_sender_name': sender.display_name,
+                'delivery_target_name': recipient.display_name if recipient else _('Sin destinatario asignado'),
+                'delivery_department_signers': signer_snapshot,
+                'registered_by_id': operator.id,
+                'registered_by_name': operator.display_name,
+            }
+            History.create(values)
+            equipment.message_post(
+                body=_('Acta de entrega registrada. Entregado por: %(sender)s. '
+                       'Destinatario: %(recipient)s. Tipo: %(kind)s. '
+                       'Registrado por: %(operator)s.') % {
+                    'sender': escape(sender.display_name),
+                    'recipient': escape(recipient.display_name if recipient else _('Sin destinatario asignado')),
+                    'kind': _('Departamento') if is_department else _('Empleado'),
+                    'operator': escape(operator.display_name),
+                },
+                subtype_xmlid='mail.mt_note',
+            )
+
     def action_generate_report(self):
         self.ensure_one()
         if self.report_type != 'return':
@@ -285,7 +344,10 @@ class MaintenanceReportWizard(models.TransientModel):
                         raise UserError(_(
                             'El departamento "%s" no tiene empleados activos para firmar.'
                         ) % dept_equipments[0].department_id.display_name)
-            return super().action_generate_report()
+            result = super().action_generate_report()
+            if self.report_type == 'delivery':
+                self._record_delivery_history(self.equipment_ids.exists())
+            return result
 
         equipments = self.equipment_ids.exists()
         if not equipments:

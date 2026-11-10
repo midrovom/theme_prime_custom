@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Maintenance Report - Asignación a bodega',
-    'summary': 'Devoluciones diferenciadas por empleado/departamento y trazabilidad permanente',
-    'version': '18.0.1.18.0',
+    'summary': 'Historial de entregas y devoluciones por empleado y departamento',
+    'version': '18.0.1.20.0',
     'category': 'Maintenance',
     'license': 'LGPL-3',
     'depends': [

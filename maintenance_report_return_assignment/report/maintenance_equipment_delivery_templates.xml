@@ -24,13 +24,21 @@
                position="before">
             <t t-if="docs and docs[0].equipment_assign_to == 'department' and docs[0].department_id">
                 <t t-set="signers" t-value="docs[0]._get_department_delivery_signers()"/>
+                <!-- Diseño equilibrado: margen interno para la persona que entrega,
+                     receptor junto a su espacio de firma y separación del borde derecho.
+                     Las filas continúan en páginas posteriores sin truncarse. -->
                 <table style="margin-top:45px; width:100%; border-collapse:collapse; font-size:11px; table-layout:fixed; page-break-inside:auto;">
+                    <colgroup>
+                        <col style="width:33%;"/>
+                        <col style="width:17%;"/>
+                        <col style="width:50%;"/>
+                    </colgroup>
                     <thead style="display:table-header-group;">
                         <tr>
-                            <th style="width:34%; padding:6px 6px 9px 0; border:0; text-align:left; vertical-align:top;">
+                            <th style="padding:10px 10px 11px 16px; border:0; text-align:left; vertical-align:middle;">
                                 ENTREGUE CONFORME:
                             </th>
-                            <th colspan="2" style="width:66%; padding:6px 0 9px 5px; border:0; text-align:left; vertical-align:top;">
+                            <th colspan="2" style="padding:10px 14px 11px 10px; border:0; text-align:left; vertical-align:middle;">
                                 RECIBI CONFORME —
                                 <span t-out="docs[0].department_id.name or ''"/>
                             </th>
@@ -39,19 +47,19 @@
                     <tbody>
                         <t t-foreach="signers" t-as="signer">
                             <tr style="page-break-inside:avoid;">
-                                <td style="width:34%; border:0; padding:10px 10px 12px 0; vertical-align:top;">
+                                <td style="border:0; padding:11px 12px 14px 16px; vertical-align:top;">
                                     <t t-if="signer_index == 0">
-                                        <div style="height:24px; border-bottom:1px solid #222; margin:0 12px 5px 0;"></div>
+                                        <div style="height:24px; width:92%; border-bottom:1px solid #222; margin:0 0 6px 0;"></div>
                                         <strong><span t-out="docs[0].entregado_por_id.name or ''"/></strong><br/>
                                         C.I. <span t-out="docs[0].entregado_por_id.identification_id or ''"/>
                                     </t>
                                 </td>
-                                <td style="width:33%; border:0; padding:9px 7px 12px 5px; vertical-align:middle; text-align:left;">
+                                <td style="border:0; padding:11px 5px 14px 10px; vertical-align:middle; text-align:left; overflow-wrap:break-word;">
                                     <span t-out="signer.name or ''"/><br/>
                                     C.I. <span t-out="signer.identification_id or ''"/>
                                 </td>
-                                <td style="width:33%; border:0; padding:9px 3px 12px 4px; vertical-align:bottom; text-align:center;">
-                                    <div style="min-height:25px; border-bottom:1px solid #222;"></div>
+                                <td style="border:0; padding:11px 24px 14px 7px; vertical-align:bottom; text-align:center;">
+                                    <div style="height:25px; width:100%; border-bottom:1px solid #222; margin:0;"></div>
                                     <span style="font-size:10px;">Firma</span>
                                 </td>
                             </tr>

@@ -19,7 +19,19 @@
                             <field name="registered_by_id"/>
                         </group>
                     </group>
-                    <group>
+                    <group invisible="movement_type not in ('employee_delivery', 'department_delivery')">
+                        <group string="Entrega">
+                            <field name="delivery_sender_name"/>
+                            <field name="delivery_sender_employee_id"/>
+                            <field name="delivery_target_name"/>
+                            <field name="delivery_target_employee_id" invisible="movement_type != 'employee_delivery'"/>
+                            <field name="delivery_target_department_id" invisible="movement_type != 'department_delivery'"/>
+                        </group>
+                        <group string="Firmantes del departamento" invisible="movement_type != 'department_delivery'">
+                            <field name="delivery_department_signers" nolabel="1"/>
+                        </group>
+                    </group>
+                    <group invisible="movement_type in ('employee_delivery', 'department_delivery')">
                         <group string="Origen y destino">
                             <field name="previous_employee_name"/>
                             <field name="previous_employee_id"/>

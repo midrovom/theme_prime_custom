@@ -1,7 +1,7 @@
 # Maintenance Report — Entrega y devolución de equipos con historial (Odoo 18)
 
 **Módulo:** `maintenance_report_return_assignment`  
-**Versión:** `18.0.1.18.0`  
+**Versión:** `18.0.1.20.0`  
 **Dependencias:** `hr_maintenance`, `maintenance_report`, `maintenance_report_unifor`.
 
 ## Acta de entrega: dos comportamientos independientes
@@ -78,3 +78,22 @@ Se eliminó el campo XML `active` de `ir.actions.server` en `data/maintenance_eq
 - Se retiró la ayuda visible bajo el selector en el wizard de devolución departamental. La sección extra del PDF que decía **Departamento responsable / Departamento receptor / Recibido-revisado por** ya no aparece; los datos continúan guardándose en el historial, junto con el empleado que entregó, el usuario registrador y la fecha.
 - **Los equipos asignados a departamento NO cambian `department_id`, `employee_id` ni `equipment_assign_to`.** El PDF mantiene la identificación de quien devuelve y el reporte de entrega conserva las firmas configuradas en 18.0.1.17.0.
 - Tras actualizar el módulo, marcar explícitamente los departamentos receptores deseados; por defecto ninguno está habilitado.
+
+
+## Versión 18.0.1.19.0 — Distribución de las firmas de entrega por departamento
+
+- Se ajusta **solo el formato** del bloque de firmas de entrega **por departamento**: más margen interno para ENTREGUE CONFORME y una mejor separación horizontal entre el nombre del empleado receptor y su línea de firma.
+- El espacio de firma comienza más cerca de cada receptor, con margen derecho para que no quede pegado al borde. Se conserva una fila de firma por empleado y la continuación entre páginas.
+- **Entrega por empleado, devoluciones, filtros e historial:** sin cambios de lógica ni de datos.
+
+
+## Versión 18.0.1.20.0 — Historial de actas de entrega
+
+- Al pulsar **Generar PDF** en un acta **Entrega** se crea una entrada de historial **por cada equipo** incluido.
+- **Entrega a empleado:** guarda fecha, empleado destinatario, encargado que entregó, usuario Odoo y fotografía de los nombres al momento del acta. Mantiene la lógica y las firmas del PDF original.
+- **Entrega a departamento:** guarda el departamento destinatario, encargado que entregó, fecha y usuario Odoo. También conserva una lista textual histórica de los empleados firmantes que aparecieron en el acta, para que permanezca disponible aunque después cambien los integrantes del departamento.
+- La pestaña **Historial de movimiento** muestra ahora las entregas y devoluciones. En cada fila aparece el tipo de movimiento, el destinatario de la entrega, su responsable, la fecha y el usuario registrador. El detalle contiene la lista histórica de firmantes departamentales.
+- No se alteran `employee_id`, `department_id` ni `equipment_assign_to` al registrar una entrega: se documenta la asignación ya existente.
+- Volver a pulsar Generar PDF en el **mismo wizard** no duplica los registros. Generar otra acta nueva sí registra otro movimiento, pues representa una nueva operación de entrega.
+- **No se importan ni inventan actas históricas anteriores** a esta versión; se registran las que se generen después de actualizar el módulo.
+- Se conservan sin cambios la lógica de las devoluciones, filtros de bodega/departamentos, historial anterior y diseños PDF.
