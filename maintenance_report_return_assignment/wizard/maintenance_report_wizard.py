@@ -1,68 +1,384 @@
 # -*- coding: utf-8 -*-
-from odoo import _, fields, models
+"""Actas: entrega original para empleado y firmas colectivas para departamento.
+
+Devolución de empleado: transferencia a empleado-bodega con receptor e historial.
+Devolución de departamento: firma y receptor del departamento, SIN transferencia.
+"""
+from markupsafe import escape
+
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
 class MaintenanceReportWizard(models.TransientModel):
     _inherit = 'maintenance.report.wizard'
 
-    # Exactly the same relation as maintenance.equipment.employee_id.
-    # No contacts, checkboxes, warehouse-to-employee mapping or new employees.
-    employee_id = fields.Many2one(
-        'hr.employee',
-        string='Bodega de devolución',
-        help=(
-            'Seleccione directamente el empleado que recibirá los equipos '
-            '(por ejemplo, Bodega Sistema). Al generar el acta, el campo '
-            'Empleado de cada equipo cambiará al seleccionado.'
-        ),
+    origen_department_id = fields.Many2one(
+        'hr.department', string='Departamento actual',
+        compute='_compute_origen', readonly=True,
     )
+    es_origen_departamento = fields.Boolean(
+        compute='_compute_origen', readonly=True,
+    )
+    origen_empresa_id = fields.Many2one(
+        'res.company', string='Empresa del equipo',
+        compute='_compute_origen', readonly=True,
+    )
+    empleado_actual_id = fields.Many2one(
+        'hr.employee', string='Empleado actual',
+        domain="[('department_id', '=', origen_department_id), "
+               "('es_bodega', '=', False), '|', "
+               "('company_id', '=', False), ('company_id', '=', origen_empresa_id)]",
+        help='Si el equipo es de un departamento, seleccione el colaborador que '
+             'realiza la devolución. Para equipos de empleado se mantiene el '
+             'empleado asignado sin permitir modificarlo.',
+    )
+    bodega_employee_id = fields.Many2one(
+        'hr.employee', string='Bodega de devolución',
+        domain="[('es_bodega', '=', True), '|', ('company_id', '=', False), "
+               "('company_id', '=', origen_empresa_id)]",
+        help='Solo requerido en devoluciones de equipos asignados a empleados.',
+    )
+    bodega_department_id = fields.Many2one(
+        'hr.department', string='Departamento de bodega',
+        compute='_compute_bodega_department', readonly=True,
+    )
+    receptor_department_filter_id = fields.Many2one(
+        'hr.department', string='Departamento receptor',
+        domain="[('permite_recepcion_equipos', '=', True), '|', "
+               "('company_id', '=', False), ('company_id', '=', origen_empresa_id)]",
+        help='Solo se muestran departamentos que tienen marcada la casilla '
+             'Habilitar como departamento receptor. Equipo entregado a '
+             'mostrará los empleados de ese departamento, excluyendo Es bodega.',
+    )
+    bodega_receptor_id = fields.Many2one(
+        'hr.employee', string='Equipo entregado a (empleado)',
+        # Dominio directo en el departamento seleccionado: evita depender de
+        # Many2many computados que no se actualizan siempre en el cliente.
+        domain="[('department_id', '=', receptor_department_filter_id or bodega_department_id), "
+               "('es_bodega', '=', False), ('id', '!=', bodega_employee_id)]",
+        help='Para equipos de departamento: empleados del Departamento receptor '
+             'seleccionado. Para equipos individuales: empleados del departamento '
+             'de la Bodega de devolución. No incluye empleados Es bodega.',
+    )
+
+    @staticmethod
+    def _origin_keys(equipments):
+        """Cada acta de devolución tiene un solo tipo y responsable de origen."""
+        return set(
+            ('department', eq.department_id.id)
+            if eq.equipment_assign_to == 'department' and eq.department_id
+            else ('employee', eq.employee_id.id)
+            if eq.equipment_assign_to == 'employee' and eq.employee_id
+            else ('empty', False)
+            for eq in equipments
+        )
+
+    @api.depends('equipment_ids', 'equipment_ids.equipment_assign_to',
+                 'equipment_ids.department_id', 'equipment_ids.employee_id',
+                 'equipment_ids.company_id')
+    def _compute_origen(self):
+        for wizard in self:
+            equipments = wizard.equipment_ids
+            companies = equipments.mapped('company_id') or self.env.company
+            wizard.origen_empresa_id = companies[:1] if len(companies) == 1 else False
+            keys = self._origin_keys(equipments)
+            is_dept = len(keys) == 1 and next(iter(keys), (None, None))[0] == 'department'
+            wizard.es_origen_departamento = bool(is_dept)
+            wizard.origen_department_id = equipments[0].department_id if is_dept else False
+
+    @api.depends('bodega_employee_id', 'bodega_employee_id.department_id')
+    def _compute_bodega_department(self):
+        for wizard in self:
+            wizard.bodega_department_id = wizard.bodega_employee_id.department_id
+
+    @api.model
+    def default_get(self, field_names):
+        values = super().default_get(field_names)
+        if self.env.context.get('default_report_type') != 'return':
+            return values
+        commands = self.env.context.get('default_equipment_ids') or []
+        ids = []
+        for command in commands:
+            if isinstance(command, (tuple, list)) and command:
+                if command[0] == 6:
+                    ids = command[2]
+                elif command[0] == 4:
+                    ids.append(command[1])
+        if not ids and self.env.context.get('active_model') == 'maintenance.equipment':
+            ids = self.env.context.get('active_ids') or []
+        equipments = self.env['maintenance.equipment'].browse(ids).exists()
+        keys = self._origin_keys(equipments)
+        if (len(keys) == 1 and equipments and
+                next(iter(keys))[0] == 'employee' and
+                'empleado_actual_id' in field_names):
+            values['empleado_actual_id'] = equipments[0].employee_id.id
+        return values
+
+    @api.onchange('equipment_ids')
+    def _onchange_equipment_ids_return(self):
+        keys = self._origin_keys(self.equipment_ids)
+        if len(keys) == 1 and self.equipment_ids and next(iter(keys))[0] == 'employee':
+            self.empleado_actual_id = self.equipment_ids[0].employee_id
+        else:
+            self.empleado_actual_id = False
+        self.bodega_employee_id = False
+        self.receptor_department_filter_id = False
+        self.bodega_receptor_id = False
+
+    @api.onchange('bodega_employee_id')
+    def _onchange_bodega_employee_id_return(self):
+        self.bodega_receptor_id = False
+
+    @api.onchange('receptor_department_filter_id')
+    def _onchange_receptor_department_filter_id(self):
+        self.bodega_receptor_id = False
+
+    def _check_return_source(self, equipments):
+        keys = self._origin_keys(equipments)
+        if len(keys) != 1 or next(iter(keys), ('empty', False))[0] == 'empty':
+            raise UserError(_(
+                'Para devolver equipos conjuntamente, seleccione equipos '
+                'del mismo departamento o asignados al mismo empleado. '
+                'No mezcle orígenes distintos.'
+            ))
+        kind, record_id = next(iter(keys))
+        employee = self.empleado_actual_id
+        if not employee or not employee.exists():
+            raise UserError(_('Seleccione el empleado que realiza la devolución.'))
+        if kind == 'department':
+            department = self.env['hr.department'].browse(record_id)
+            if employee.department_id != department:
+                raise UserError(_(
+                    'El empleado que devuelve debe pertenecer al departamento "%s".'
+                ) % department.display_name)
+        elif employee.id != record_id:
+            raise UserError(_(
+                'El empleado actual debe ser el mismo empleado asignado a los equipos.'
+            ))
+        companies = {(eq.company_id or self.env.company).id for eq in equipments}
+        if len(companies) != 1:
+            raise UserError(_('Los equipos seleccionados deben pertenecer a una sola empresa.'))
+        company_id = next(iter(companies))
+        if employee.company_id and employee.company_id.id != company_id:
+            raise UserError(_('El empleado que devuelve pertenece a otra empresa.'))
+        if employee.es_bodega:
+            raise UserError(_(
+                'El empleado que devuelve no puede tener marcada la casilla "Es bodega".'
+            ))
+        return kind, company_id
+
+    def _check_department_receiver(self, equipments, company_id):
+        """Validar departamento/receptor en el servidor, además del dominio UI."""
+        receiver = self.bodega_receptor_id
+        department = equipments[0].department_id
+        destination = self.receptor_department_filter_id
+        if not department:
+            raise UserError(_('Los equipos necesitan un departamento de origen.'))
+        if not destination or not destination.exists():
+            raise UserError(_('Seleccione el Departamento receptor.'))
+        if not destination.permite_recepcion_equipos:
+            raise UserError(_(
+                'El departamento "%s" no está habilitado para recibir equipos. '
+                'Marque "Habilitar como departamento receptor" en su ficha.'
+            ) % destination.display_name)
+        if destination.company_id and destination.company_id.id != company_id:
+            raise UserError(_(
+                'El Departamento receptor debe pertenecer a la empresa de los equipos.'
+            ))
+        if not receiver or not receiver.exists():
+            raise UserError(_(
+                'Seleccione un empleado de Departamento receptor para registrar '
+                'quién recibió o revisó el equipo.'
+            ))
+        if receiver.es_bodega:
+            raise UserError(_(
+                'Equipo entregado a no puede ser un empleado con "Es bodega".'
+            ))
+        if receiver.department_id != destination:
+            raise UserError(_(
+                'El empleado receptor debe pertenecer al departamento seleccionado: %s.'
+            ) % destination.display_name)
+        if receiver.company_id and receiver.company_id.id != company_id:
+            raise UserError(_('El receptor pertenece a otra empresa.'))
+        if department.company_id and department.company_id.id != company_id:
+            raise UserError(_('El departamento de origen pertenece a otra empresa.'))
+        if self.bodega_employee_id:
+            raise UserError(_(
+                'Para equipos de departamento no seleccione Bodega de devolución.'
+            ))
+        return department, receiver
+
+    def _register_department_return(self, equipments, company_id):
+        """Registrar el movimiento SIN escribir employee_id ni department_id."""
+        department, receiver = self._check_department_receiver(equipments, company_id)
+        employee = self.empleado_actual_id
+        operator = self.env.user
+        now = fields.Datetime.now()
+        History = self.env['maintenance.equipment.bodega.history'].sudo()
+        for equipment in equipments:
+            # El último receptor del mismo departamento receptor permite ver
+            # la cadena histórica; ninguna entrada previa se sobrescribe.
+            previous = History.search([
+                ('equipment_id', '=', equipment.id),
+                ('movement_type', '=', 'department_return'),
+                ('destination_department_id', '=', receiver.department_id.id),
+            ], limit=1)
+            previous_receiver = previous.receiver_employee_id if previous else False
+            equipment.write({
+                'devolucion_acta_empleado_id': employee.id,
+                'devolucion_acta_departamento_id': department.id,
+                'devolucion_acta_receptor_id': receiver.id,
+                'entregado_por_id': self.entregado_por_id.id,
+            })
+            History.create({
+                'equipment_id': equipment.id,
+                'company_id': company_id,
+                'movement_type': 'department_return',
+                'movement_date': now,
+                'previous_employee_id': employee.id,
+                'previous_department_id': department.id,
+                'destination_department_id': self.receptor_department_filter_id.id,
+                'warehouse_employee_id': False,
+                'receiver_employee_id': receiver.id,
+                'previous_receiver_employee_id': previous_receiver.id if previous_receiver else False,
+                'registered_by_id': operator.id,
+                'previous_employee_name': employee.display_name,
+                'previous_department_name': department.display_name,
+                'warehouse_name': False,
+                'receiver_name': receiver.display_name,
+                'previous_receiver_name': previous_receiver.display_name if previous_receiver else False,
+                'registered_by_name': operator.display_name,
+            })
+            equipment.message_post(
+                body=_('Devolución del departamento %(department)s: '
+                       '%(employee)s entregó el equipo a %(receiver)s. '
+                       'Receptor del departamento %(destination)s. '
+                       'Sin cambio de asignación ni envío a bodega. '
+                       'Registrado por %(operator)s.') % {
+                    'department': escape(department.display_name),
+                    'employee': escape(employee.display_name),
+                    'receiver': escape(receiver.display_name),
+                    'destination': escape(self.receptor_department_filter_id.display_name),
+                    'operator': escape(operator.display_name),
+                },
+                subtype_xmlid='mail.mt_note',
+            )
+
+    def _record_delivery_history(self, equipments):
+        """Una fila por equipo al generar el acta de entrega.
+
+        Los campos employee_id/department_id NO se modifican: la entrega
+        documenta la asignación existente. Se guarda la lista de firmantes
+        del momento, además de las relaciones y los nombres históricos.
+        """
+        self.ensure_one()
+        History = self.env['maintenance.equipment.bodega.history'].sudo()
+        token = 'delivery-wizard-%s' % self.id
+        existing = set(History.search([
+            ('delivery_wizard_token', '=', token),
+            ('equipment_id', 'in', equipments.ids),
+        ]).mapped('equipment_id').ids)
+        operator = self.env.user
+        sender = self.entregado_por_id
+        now = fields.Datetime.now()
+        for equipment in equipments:
+            if equipment.id in existing:
+                continue
+            is_department = equipment.equipment_assign_to == 'department' and bool(equipment.department_id)
+            receiver_employee = equipment.employee_id if not is_department else False
+            receiver_department = equipment.department_id if is_department else False
+            recipient = receiver_department or receiver_employee
+            # Respetar el flujo original incluso si una ficha heredada carece
+            # de destinatario: registrar la entrega sin inventar una persona.
+            signers = equipment._get_department_delivery_signers() if is_department else self.env['hr.employee'].browse()
+            signer_snapshot = '\n'.join(
+                '%s — C.I. %s' % (e.display_name, e.identification_id or '')
+                for e in signers
+            ) if is_department else False
+            values = {
+                'equipment_id': equipment.id,
+                'company_id': (equipment.company_id or self.env.company).id,
+                'movement_date': now,
+                'movement_type': 'department_delivery' if is_department else 'employee_delivery',
+                'delivery_wizard_token': token,
+                'delivery_sender_employee_id': sender.id,
+                'delivery_target_employee_id': receiver_employee.id if receiver_employee else False,
+                'delivery_target_department_id': receiver_department.id if receiver_department else False,
+                'delivery_sender_name': sender.display_name,
+                'delivery_target_name': recipient.display_name if recipient else _('Sin destinatario asignado'),
+                'delivery_department_signers': signer_snapshot,
+                'registered_by_id': operator.id,
+                'registered_by_name': operator.display_name,
+            }
+            History.create(values)
+            equipment.message_post(
+                body=_('Acta de entrega registrada. Entregado por: %(sender)s. '
+                       'Destinatario: %(recipient)s. Tipo: %(kind)s. '
+                       'Registrado por: %(operator)s.') % {
+                    'sender': escape(sender.display_name),
+                    'recipient': escape(recipient.display_name if recipient else _('Sin destinatario asignado')),
+                    'kind': _('Departamento') if is_department else _('Empleado'),
+                    'operator': escape(operator.display_name),
+                },
+                subtype_xmlid='mail.mt_note',
+            )
 
     def action_generate_report(self):
         self.ensure_one()
         if self.report_type != 'return':
-            # Delivery and uniform reports keep their existing behavior.
-            return super().action_generate_report()
+            # Entrega individual y uniforme conservan la lógica de los addons
+            # originales. Solo la entrega departamental imprime varias firmas.
+            if self.report_type == 'delivery' and self.equipment_ids:
+                dept_equipments = self.equipment_ids.filtered(
+                    lambda eq: eq.equipment_assign_to == 'department' and eq.department_id
+                )
+                if dept_equipments:
+                    dept_ids = set(self.equipment_ids.mapped('department_id').ids)
+                    if len(dept_equipments) != len(self.equipment_ids) or len(dept_ids) != 1:
+                        raise UserError(_(
+                            'Para un acta de entrega departamental, seleccione '
+                            'únicamente equipos del mismo departamento.'
+                        ))
+                    if not dept_equipments[0]._get_department_delivery_signers():
+                        raise UserError(_(
+                            'El departamento "%s" no tiene empleados activos para firmar.'
+                        ) % dept_equipments[0].department_id.display_name)
+            result = super().action_generate_report()
+            if self.report_type == 'delivery':
+                self._record_delivery_history(self.equipment_ids.exists())
+            return result
 
-        nuevo_empleado = self.employee_id
-        if not nuevo_empleado:
-            raise UserError(_('Seleccione una Bodega de devolución (Empleado).'))
-
-        equipments = self.equipment_ids
+        equipments = self.equipment_ids.exists()
         if not equipments:
             raise UserError(_('Debe seleccionar al menos un equipo.'))
+        kind, company_id = self._check_return_source(equipments)
+        if not self.entregado_por_id:
+            raise UserError(_('Seleccione el encargado de entrega/recepción de equipos.'))
 
-        # The original return PDF uses docs[0].employee_id in the intro and
-        # signature. All items in the acta therefore must come from one person.
-        if any(not equipment.employee_id for equipment in equipments):
-            raise UserError(_(
-                'Todos los equipos deben tener un empleado asignado antes '
-                'de generar el acta de devolución.'
-            ))
-        empleados_anteriores = equipments.mapped('employee_id')
-        if len(empleados_anteriores) != 1:
-            raise UserError(_(
-                'Seleccione equipos de un mismo empleado para cada acta '
-                'de devolución.'
-            ))
-
-        if len(equipments.mapped('company_id')) > 1:
-            raise UserError(_(
-                'No se pueden incluir equipos de distintas empresas '
-                'en una misma acta de devolución.'
-            ))
-        empleado_anterior = empleados_anteriores
-        if empleado_anterior == nuevo_empleado:
-            raise UserError(_(
-                'El equipo ya está asignado a "%s". '
-                'Seleccione otro empleado de destino.'
-            ) % nuevo_empleado.display_name)
-
-        # Call the existing report flow, which updates entregado_por_id and
-        # prepares the report action. Odoo renders the PDF afterward.
-        action = super().action_generate_report()
-        equipments.write({
-            'empleado_devolucion_anterior_id': empleado_anterior.id,
-            'employee_id': nuevo_empleado.id,
-        })
-        return action
+        if kind == 'department':
+            # El equipo sigue asignado al departamento. Solo cambia el
+            # historial/auditoría y el firmante de esta acta.
+            self._register_department_return(equipments, company_id)
+        else:
+            # Comportamiento heredado del antiguo botón Asignar a bodega.
+            if not self.bodega_employee_id or not self.bodega_receptor_id:
+                raise UserError(_(
+                    'Seleccione la Bodega de devolución y su empleado receptor.'
+                ))
+            assignment = self.env['maintenance.equipment.bodega.wizard'].create({
+                'equipment_ids': [(6, 0, equipments.ids)],
+                'company_id': company_id,
+                'bodega_employee_id': self.bodega_employee_id.id,
+                'bodega_receptor_id': self.bodega_receptor_id.id,
+            })
+            assignment._apply_assignment(return_employee=self.empleado_actual_id)
+            equipments.write({
+                'devolucion_acta_empleado_id': self.empleado_actual_id.id,
+                'devolucion_acta_departamento_id': False,
+                'devolucion_acta_receptor_id': self.bodega_receptor_id.id,
+                'entregado_por_id': self.entregado_por_id.id,
+            })
+        return self.env.ref(
+            'maintenance_report.maintenance_equipment_return_report'
+        ).report_action(equipments)

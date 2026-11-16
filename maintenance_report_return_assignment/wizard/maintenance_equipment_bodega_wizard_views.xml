@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_maintenance_equipment_bodega_wizard_form" model="ir.ui.view">
+        <field name="name">maintenance.equipment.bodega.wizard.form</field>
+        <field name="model">maintenance.equipment.bodega.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Asignar equipos a bodega">
+                <group>
+                    <field name="company_id" invisible="1"/>
+                    <field name="equipment_count" readonly="1"/>
+                    <field name="equipment_id" options="{'no_open': True}"
+                           readonly="1" invisible="equipment_count != 1"/>
+                    <field name="employee_anterior_id" readonly="1"
+                           widget="many2one_avatar_employee" invisible="equipment_count != 1"/>
+                    <field name="equipment_ids" widget="many2many_tags" readonly="1"
+                           options="{'no_create': True, 'no_open': True}"
+                           invisible="equipment_count &lt;= 1"/>
+                    <field name="bodega_employee_id" widget="many2one_avatar_employee"
+                           options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"
+                           required="1"/>
+                    <field name="bodega_department_id" invisible="1"/>
+                    <field name="bodega_receptor_id" widget="many2one_avatar_employee"
+                           options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"
+                           readonly="not bodega_department_id"
+                           required="1"/>
+                    <div class="text-muted" invisible="not bodega_employee_id or bodega_department_id">
+                        La bodega seleccionada no tiene departamento configurado.
+                        Asigne un departamento a ese empleado para poder seleccionar al receptor.
+                    </div>
+                </group>
+                <footer>
+                    <button name="action_confirm_assignment" type="object"
+                            string="Asignar a bodega" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

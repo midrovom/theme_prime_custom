@@ -1,24 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- The PDF is generated after employee_id is reassigned. Keep the
-         old employee's name/ID on the acta, but show the new employee as
-         the recipient under "Bodega de devolución". -->
+    <!-- No leer employee_id como el firmante de devolución: en modo Empleado
+         employee_id YA fue cambiado a bodega; en modo Departamento puede ser
+         False. El wizard guarda el último firmante expresamente. -->
     <template id="report_equipment_return_employee_origin"
               inherit_id="maintenance_report.report_equipment_return">
-        <xpath expr="//p//span[@t-out='docs[0].employee_id.name']/ancestor::p[1]" position="after">
-            <p style="margin-top:8px; text-align:justify;">
+        <xpath expr="//p//span[@t-out='docs[0].employee_id.name']/ancestor::p[1]"
+               position="after">
+            <p t-if="not docs[0].devolucion_acta_departamento_id and docs[0].employee_id.es_bodega and docs[0].devolucion_acta_empleado_id"
+               style="margin-top:8px; text-align:justify;">
                 <strong>Bodega de devolución:</strong>
                 <span t-out="docs[0].employee_id.name or ''"/>
+                <br/>
+                <strong>Recibido por:</strong>
+                <span t-out="docs[0].devolucion_acta_receptor_id.name or ''"/>
             </p>
         </xpath>
-        <xpath expr="(//p//span[@t-out='docs[0].employee_id.name'])[1]" position="attributes">
-            <attribute name="t-out">docs[0].empleado_devolucion_anterior_id.name or docs[0].employee_id.name or ''</attribute>
+        <xpath expr="(//p//span[@t-out='docs[0].employee_id.name'])[1]"
+               position="attributes">
+            <attribute name="t-out">(docs[0].devolucion_acta_empleado_id.name or docs[0].empleado_devolucion_anterior_id.name or docs[0].employee_id.name or '')</attribute>
         </xpath>
-        <xpath expr="//strong[contains(normalize-space(.), 'ENTREGUE CONFORME')]/following-sibling::span[@t-out='docs[0].employee_id.name']" position="attributes">
-            <attribute name="t-out">docs[0].empleado_devolucion_anterior_id.name or docs[0].employee_id.name or ''</attribute>
+        <xpath expr="//strong[contains(normalize-space(.), 'ENTREGUE CONFORME')]/following-sibling::span[@t-out='docs[0].employee_id.name']"
+               position="attributes">
+            <attribute name="t-out">(docs[0].devolucion_acta_empleado_id.name or docs[0].empleado_devolucion_anterior_id.name or docs[0].employee_id.name or '')</attribute>
         </xpath>
-        <xpath expr="//strong[contains(normalize-space(.), 'ENTREGUE CONFORME')]/following-sibling::span[@t-out='docs[0].employee_id.identification_id']" position="attributes">
-            <attribute name="t-out">docs[0].empleado_devolucion_anterior_id.identification_id or docs[0].employee_id.identification_id or ''</attribute>
+        <xpath expr="//strong[contains(normalize-space(.), 'ENTREGUE CONFORME')]/following-sibling::span[@t-out='docs[0].employee_id.identification_id']"
+               position="attributes">
+            <attribute name="t-out">(docs[0].devolucion_acta_empleado_id.identification_id or docs[0].empleado_devolucion_anterior_id.identification_id or docs[0].employee_id.identification_id or '')</attribute>
         </xpath>
     </template>
 </odoo>

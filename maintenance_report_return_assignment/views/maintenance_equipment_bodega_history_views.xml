@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de detalle de cada movimiento. Solo lectura, sin edición manual. -->
+    <record id="view_maintenance_equipment_bodega_history_form" model="ir.ui.view">
+        <field name="name">maintenance.equipment.bodega.history.form</field>
+        <field name="model">maintenance.equipment.bodega.history</field>
+        <field name="arch" type="xml">
+            <form string="Historial de movimiento" create="0" edit="0" delete="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="equipment_id"/>
+                            <field name="company_id"/>
+                            <field name="movement_date"/>
+                            <field name="movement_type"/>
+                        </group>
+                        <group>
+                            <field name="registered_by_name"/>
+                            <field name="registered_by_id"/>
+                        </group>
+                    </group>
+                    <group invisible="movement_type not in ('employee_delivery', 'department_delivery')">
+                        <group string="Entrega">
+                            <field name="delivery_sender_name"/>
+                            <field name="delivery_sender_employee_id"/>
+                            <field name="delivery_target_name"/>
+                            <field name="delivery_target_employee_id" invisible="movement_type != 'employee_delivery'"/>
+                            <field name="delivery_target_department_id" invisible="movement_type != 'department_delivery'"/>
+                        </group>
+                        <group string="Firmantes del departamento" invisible="movement_type != 'department_delivery'">
+                            <field name="delivery_department_signers" nolabel="1"/>
+                        </group>
+                    </group>
+                    <group invisible="movement_type in ('employee_delivery', 'department_delivery')">
+                        <group string="Origen y destino">
+                            <field name="previous_employee_name"/>
+                            <field name="previous_employee_id"/>
+                            <field name="previous_department_name"/>
+                            <field name="previous_department_id"/>
+                            <field name="warehouse_name"/>
+                            <field name="warehouse_employee_id" invisible="movement_type == 'department_return'"/>
+                            <field name="destination_department_id" invisible="movement_type != 'department_return'"/>
+                        </group>
+                        <group string="Recepción física">
+                            <field name="receiver_name"/>
+                            <field name="receiver_employee_id"/>
+                            <field name="previous_receiver_name"/>
+                            <field name="previous_receiver_employee_id"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
