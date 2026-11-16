@@ -17,17 +17,20 @@
   <field name="name">catastro.retail.settings.wizard.form</field>
   <field name="model">catastro.retail.settings.wizard</field>
   <field name="arch" type="xml">
-   <form string="Configurar cliente Consumidor Final">
+   <form string="Configurar Consumidor Final y ERP de Tienda">
     <sheet>
      <div class="alert alert-info" role="alert">Seleccione una empresa existente y el contacto que recibirá las cotizaciones de mostrador. No es necesario crear una empresa nueva.</div>
      <group>
       <field name="company_id" options="{'no_create': True, 'no_create_edit': True}"/>
       <field name="retail_partner_id" domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]" options="{'no_quick_create': True}"/>
+      <field name="retail_erp_company_code" placeholder="Ej. 001 o TIENDA-GYE"/>
+
      </group>
+     <div class="text-muted">El Código ERP para Tienda sustituye únicamente order_company_code al enviar proformas originadas en Gestión de Tienda. Las cotizaciones normales siguen enviando company_registry y la conexión a Radis utiliza la empresa real de Odoo. Si usa Tienda, configure este código antes de exportar.</div>
      <div class="text-muted">Puede buscar un contacto existente o usar «Crear y editar» para dar de alta un contacto Consumidor Final. La selección se guardará solo para la empresa indicada.</div>
     </sheet>
     <footer>
-     <button string="Guardar Consumidor Final" type="object" name="action_save" class="btn-primary"/>
+     <button string="Guardar configuración de Tienda" type="object" name="action_save" class="btn-primary"/>
      <button string="Descartar" special="cancel" class="btn-secondary"/>
     </footer>
    </form>

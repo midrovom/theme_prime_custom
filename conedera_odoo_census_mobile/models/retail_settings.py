@@ -21,18 +21,40 @@ class CatastroRetailSettingsWizard(models.TransientModel):
         help='Contacto de Odoo que se asignará a las cotizaciones de mostrador de la empresa.'
     )
 
+    # Texto, no numérico: un código ERP puede tener ceros iniciales (p. ej. 001).
+    retail_erp_company_code = fields.Char(
+        string='Código de empresa ERP para Tienda',
+        help='Solo se envía como order_company_code de una proforma creada desde '
+             'Gestión de Tienda PWA. No modifica res.company ni el código de '
+             'empresa de las cotizaciones normales.',
+    )
+
+    @api.model
+    def _retail_erp_code_config_key(self, company_id):
+        return 'conedera_odoo_census_mobile.retail_erp_company_code.company_%s' % company_id
+
+    def _get_retail_erp_code(self, company):
+        if not company:
+            return ''
+        return self.env['ir.config_parameter'].sudo().get_param(
+            self._retail_erp_code_config_key(company.id), default='') or ''
+
     @api.model
     def default_get(self, fields_list):
         vals = super().default_get(fields_list)
         if 'retail_partner_id' in fields_list:
             company = self.env['res.company'].browse(vals.get('company_id') or self.env.company.id)
             vals['retail_partner_id'] = company.catastro_retail_partner_id.id or False
+        if 'retail_erp_company_code' in fields_list:
+            company = self.env['res.company'].browse(vals.get('company_id') or self.env.company.id)
+            vals['retail_erp_company_code'] = self._get_retail_erp_code(company)
         return vals
 
     @api.onchange('company_id')
     def _onchange_company_id(self):
         for wizard in self:
             wizard.retail_partner_id = wizard.company_id.catastro_retail_partner_id if wizard.company_id else False
+            wizard.retail_erp_company_code = wizard._get_retail_erp_code(wizard.company_id)
 
     def action_save(self):
         self.ensure_one()
@@ -48,11 +70,16 @@ class CatastroRetailSettingsWizard(models.TransientModel):
         # Reutilizar el inverse existente, que persiste en ir.config_parameter
         # y evita columnas nuevas en res_company durante la actualización.
         self.company_id.write({'catastro_retail_partner_id': partner.id})
+        code = self.retail_erp_company_code or ''
+        if code and (code != code.strip() or len(code) > 64 or any(ord(ch) < 32 for ch in code)):
+            raise ValidationError('El código ERP de Tienda debe tener hasta 64 caracteres y no puede incluir espacios externos ni saltos de línea.')
+        self.env['ir.config_parameter'].sudo().set_param(
+            self._retail_erp_code_config_key(self.company_id.id), code)
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'title': 'Consumidor Final configurado',
+                'title': 'Configuración de Tienda guardada',
                 'message': 'La empresa %s utilizará el cliente %s en Cotizador de tienda.' % (
                     self.company_id.display_name, partner.display_name),
                 'type': 'success',

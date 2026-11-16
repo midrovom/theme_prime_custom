@@ -22,6 +22,16 @@ class SaleOrder(models.Model):
              "no modifica la nota ni la referencia original.",
     )
 
+    catastro_pwa_retail_origin = fields.Boolean(
+        string='Creada por Gestión de Tienda PWA',
+        default=False,
+        copy=False,
+        readonly=True,
+        index=True,
+        help='Marcador inmutable para diferenciar el código de empresa enviado '
+             'a Radis. No depende del perfil del usuario que haga el envío.',
+    )
+
     def extract_plain_text(self):
         self.ensure_one()
         if self.catastro_pwa_origin:

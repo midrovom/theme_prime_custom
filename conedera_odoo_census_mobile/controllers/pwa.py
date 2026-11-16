@@ -364,7 +364,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.29",
+                "pwa_server_version": "18.0.1.5.30",
                 "census_role": census_role,
                 "quote_retail_role": retail_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
@@ -1213,6 +1213,7 @@ class ConederaFieldAppController(http.Controller):
             'date_order': fields.Datetime.now(),
             'client_order_ref': False,
             'catastro_pwa_origin': True,
+            'catastro_pwa_retail_origin': True,
             'origin': source.name,
             'census_originated': False,
             'census_visit_id': False,
@@ -1669,7 +1670,8 @@ class ConederaFieldAppController(http.Controller):
         # el puente antiguo: la PWA calcula Loyalty antes del recargo y,
         # cuando se actualizan promociones, restaura y recalcula los precios.
         vals = {"partner_id": partner.id, "company_id": request.env.company.id,
-                "user_id": request.env.user.id, "census_originated": not self._quote_is_retail(partner.id),
+                "user_id": request.env.user.id, "census_originated": not retail_quote,
+                "catastro_pwa_retail_origin": retail_quote,
                 "order_line": order_lines}
         # La bodega es obligatoria para que validación, pedido y consulta coincidan.
         vals["warehouse_id"] = warehouse.id
