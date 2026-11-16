@@ -52,9 +52,9 @@ class ConederaFieldAppController(http.Controller):
     @http.route("/catastro/manifest.webmanifest", type="http", auth="public", methods=["GET"], csrf=False, sitemap=False)
     def manifest(self, **kwargs):
         payload = {
-            "name": "Catastro de Campo",
-            "short_name": "Catastro",
-            "description": "Catastro comercial y visitas de campo para múltiples empresas",
+            "name": "Gestión Comercial",
+            "short_name": "Comercial",
+            "description": "Gestión de cotizaciones y actividades comerciales",
             "start_url": "/catastro/app",
             "scope": "/catastro/",
             "display": "standalone",
@@ -249,6 +249,11 @@ class ConederaFieldAppController(http.Controller):
         return result
 
     def _require_census_role(self):
+        # Gestión de Tienda tiene prioridad, aunque la cuenta conserve permisos
+        # históricos del módulo de Catastro. Esta comprobación también protege
+        # los controladores del lado del servidor, no solo el menú de la PWA.
+        if request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail"):
+            raise AccessError("El perfil de Tienda solo tiene acceso a cotizaciones de Consumidor Final desde esta aplicación.")
         if not is_census_user(request.env.user):
             raise AccessError("Su usuario no tiene permisos de Catastro Comercial.")
 
@@ -310,8 +315,9 @@ class ConederaFieldAppController(http.Controller):
 
     @http.route(["/catastro/app/bootstrap", "/conedera/app/bootstrap"], type="json", auth="user", methods=["POST"], readonly=True)
     def bootstrap(self):
-        census_role = is_census_user(request.env.user)
         retail_role = request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
+        # Tienda tiene prioridad incluso si el usuario pertenece a ambos grupos.
+        census_role = is_census_user(request.env.user) and not retail_role
         if not census_role and not retail_role:
             raise AccessError("Solicite permisos de Catastro o Cotizador de tienda.")
         # El perfil exclusivo de Tienda no descarga el padrón de catastros,
@@ -358,7 +364,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.27",
+                "pwa_server_version": "18.0.1.5.28",
                 "census_role": census_role,
                 "quote_retail_role": retail_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
@@ -1204,6 +1210,7 @@ class ConederaFieldAppController(http.Controller):
             'state': 'draft',
             'date_order': fields.Datetime.now(),
             'client_order_ref': False,
+            'catastro_pwa_origin': True,
             'origin': source.name,
             'census_originated': False,
             'census_visit_id': False,
@@ -1606,6 +1613,9 @@ class ConederaFieldAppController(http.Controller):
         reference = (payload.get("client_order_ref") or "").strip()[:100]
         if reference:
             vals["client_order_ref"] = reference
+        # Origen persistente, válido también si la proforma es exportada más tarde
+        # desde el cron de Radis, fuera del contexto HTTP de la PWA.
+        vals["catastro_pwa_origin"] = True
         # Primero crear usando create() nativo y sus personalizaciones: cálculo de listas,
         # impuestos, descuentos y condiciones de cliente en el servidor Odoo.
         order = Sale.with_company(request.env.company).create(vals)
@@ -1737,6 +1747,7 @@ class ConederaFieldAppController(http.Controller):
         # cambian de cantidad, y después dejar actuar a las reglas nativas.
         order.catastro_restore_base_prices()
         changes = {"warehouse_id": warehouse.id,
+                   "catastro_pwa_origin": True,
                    "catastro_payment_option_id": option.id if option else False,
                    "client_order_ref": (client_order_ref or "").strip()[:100]}
         if option and option.payment_term_id:

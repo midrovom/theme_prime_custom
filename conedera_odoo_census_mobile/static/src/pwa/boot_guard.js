@@ -4,7 +4,7 @@
   if (!root) return;
   let done = false;
   let timer;
-  const messageText = (message) => String(message || "No se pudo iniciar Catastro.");
+  const messageText = (message) => String(message || "No se pudo iniciar la aplicación.");
   function showFailure(message) {
     if (done) return;
     done = true;
@@ -17,7 +17,7 @@
     icon.className = "boot-logo";
     icon.textContent = "!";
     const title = document.createElement("strong");
-    title.textContent = "Catastro no pudo iniciar";
+    title.textContent = "No se pudo iniciar la aplicación";
     const description = document.createElement("p");
     description.className = "boot-error-text";
     description.textContent = messageText(message);
@@ -65,11 +65,7 @@
         note.textContent = "No se pudo actualizar: " + messageText(error?.message || error) + ". No se han borrado los registros locales.";
       }
     });
-    const back = document.createElement("a");
-    back.className = "btn btn-outline";
-    back.href = "/web";
-    back.textContent = "Abrir Odoo";
-    actions.append(retry, repair, back);
+    actions.append(retry, repair);
     pane.append(icon, title, description, note, actions);
     root.append(pane);
   }

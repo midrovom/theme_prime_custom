@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.27";
+const APP_VERSION = "18.0.1.5.28";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -31,6 +31,7 @@ const state = {
   localReady: false,
   serverSnapshot: null,
   starting: true,
+  profileVerified: false,
   sessionBlocked: false,
   candidateMatches: [],
   candidateSelected: null,
@@ -294,6 +295,15 @@ async function hydrateLocalState() {
   state.orders = orders;
   state.products = products;
   state.meta = meta?.value || null;
+  // Los datos guardados no sustituyen la autorización de una sesión actual.
+  if (isRetailMode()) {
+    // Los datos de Catastro históricos siguen almacenados para no borrar
+    // pendientes de un perfil anterior, pero nunca se muestran a Tienda.
+    state.partners = [];
+    state.visits = [];
+    state.orders = [];
+    state.products = [];
+  }
   state.catalog = catalog?.value || state.catalog;
   state.quoteProducts = quoteProducts;
   state.quoteDetails = quoteDetails;
@@ -332,6 +342,7 @@ async function refreshFromServer(showMessage = true, prefetchedBootstrap = null)
     }
     state.sessionBlocked=false;
     state.serverSnapshot = data;
+    state.profileVerified = true;
     if (db && state.localReady) {
       try {
         await persistBootstrap(data);
@@ -363,21 +374,33 @@ function connectionBanner() {
   // persistentes por una apertura lenta; registrar detalles técnicos en «Más».
   if (state.starting && !state.partners.length) return `<div class="connection"><span><i class="dot"></i>Conectando con Odoo…</span></div>`;
   if (state.sessionBlocked) return `<div class="connection error">Operaciones de otra sesión: sincronización bloqueada para proteger los datos.</div>`;
-  if (state.syncing) return `<div class="connection"><span><i class="dot"></i>Sincronizando…</span><span>${state.pending.filter(x=>x.state!=="synced").length} pendientes</span></div>`;
+  if (state.syncing) return `<div class="connection"><span><i class="dot"></i>Sincronizando…</span><span>${pendingVisible().filter(x=>x.state!=="synced").length} pendientes</span></div>`;
   if (!state.online) return `<div class="connection offline"><span><i class="dot"></i>Sin cobertura / offline</span><span>${state.localReady?"Los datos quedan en este dispositivo":"Almacenamiento local aún no disponible; evite guardar cambios"}</span></div>`;
   if (state.lastError) return `<div class="connection error"><span><i class="dot"></i>${esc(state.lastError)}</span><button class="btn btn-outline" style="min-height:34px;padding:4px 9px" data-action="refresh">Reintentar</button></div>`;
-  return `<div class="connection"><span><i class="dot"></i>En línea</span><span>${state.pending.filter(x=>x.state!=="synced").length} pendientes</span></div>`;
+  return `<div class="connection"><span><i class="dot"></i>En línea</span><span>${pendingVisible().filter(x=>x.state!=="synced").length} pendientes</span></div>`;
 }
 
+// Este modo se comprueba contra el grupo de Tienda; tiene prioridad
+// sobre los permisos de Catastro si un usuario pertenece a ambos perfiles.
+function isRetailMode() { return state.meta?.capabilities?.quote_retail_role === true; }
+function pendingVisible() {
+  if (!isRetailMode()) return state.pending;
+  // No revelar ni sincronizar operaciones de Campo que quedaron en IndexedDB
+  // antes de que el usuario recibiera el perfil de Tienda.
+  const consumerId = Number(state.meta?.capabilities?.quote_retail_partner?.id || 0);
+  return state.pending.filter(op => op.type === "quote" && consumerId > 0 &&
+    Number(op.payload?.partner_id) === consumerId);
+}
 function nav(active, desktop=false) {
   const item = (page, icon, label) => `<button class="nav-btn ${active===page?"active":""}" data-nav="${page}"><b>${icon}</b><span>${label}</span></button>`;
-  const retailOnly=state.meta?.capabilities?.census_role===false;
-  return `<nav class="${desktop?"side-nav":"bottom-nav"} ${retailOnly?'retail-only':''}" aria-label="Navegación">${item("home","⌂",retailOnly?"Tienda":"Catastros")}${item("quote-start","▤","Cotizar")}${retailOnly?'':item("visit","＋","Visita")}${item("pending","⇅","Pendientes")}${item("more","•••","Más")}${desktop?'<a class="nav-btn" href="/web" target="_blank" rel="noopener"><b>▦</b><span>Abrir Odoo</span></a>':""}</nav>`;
+  const retailOnly = isRetailMode();
+  return `<nav class="${desktop?"side-nav":"bottom-nav"} ${retailOnly?'retail-only':''}" aria-label="Navegación">${item("home","⌂",retailOnly?"Tienda":"Catastros")}${item("quote-start","▤","Cotizar")}${retailOnly?'':item("visit","＋","Visita")}${item("pending","⇅","Pendientes")}${item("more","•••","Más")}</nav>`;
 }
 function shell(title, body, opts={}) {
+  const retailOnly = isRetailMode();
   return `<div class="app-shell">
-    <aside class="desktop-sidebar"><div class="brand-lockup"><strong>CATASTRO</strong><span>App de Campo</span></div>${nav(opts.nav||state.page,true)}</aside>
-    <div class="app-main"><header class="topbar"><div><div class="eyebrow">Catastro de Campo</div><h1>${esc(title)}</h1></div><div class="row"><a class="odoo-top-link" href="/web" target="_blank" rel="noopener">Odoo</a><button class="icon-btn" data-action="refresh" aria-label="Actualizar">↻</button></div></header>
+    <aside class="desktop-sidebar"><div class="brand-lockup"><strong>${retailOnly?'VENTAS DE TIENDA':'CATASTRO'}</strong><span>${retailOnly?'Cotizaciones':'App de Campo'}</span></div>${nav(opts.nav||state.page,true)}</aside>
+    <div class="app-main"><header class="topbar"><div><div class="eyebrow">${retailOnly?'Gestión comercial':'Catastro de Campo'}</div><h1>${esc(title)}</h1></div><div class="row"><button class="icon-btn" data-action="refresh" aria-label="Actualizar">↻</button></div></header>
     <main class="content">${connectionBanner()}${body}</main>
     ${opts.fab ? `<button class="fab" data-action="new-catastro" aria-label="Nuevo catastro">＋</button>` : ""}
     ${nav(opts.nav || state.page)}</div>
@@ -406,18 +429,20 @@ function renderHome() {
   const partners = state.partners.filter(p => !q || [p.name,p.commercial_name,p.vat,p.city,p.phone,p.mobile].some(v => String(v||"").toLowerCase().includes(q)));
   const retail=state.meta?.capabilities?.quote_retail_partner;
   const retailButton=state.meta?.capabilities?.quote_retail_enabled
-    ?`<section class="partner-quote-cta"><div><strong>Venta directa · Consumidor Final</strong><p>Crear proforma sin catastro. Precios de lista, promociones y formas de pago.</p></div><div class="retail-entry-actions"><button class="btn btn-primary" type="button" data-action="quote-retail">▤ Cotizar consumidor final</button><button class="btn btn-outline" type="button" data-action="retail-quotes-open">⌕ Buscar proformas</button></div></section>`:"";
-  const isCensus=state.meta?.capabilities?.census_role!==false;
-  const body = `${retailButton}${isCensus?`<div class="home-tools"><span>Mis clientes</span><div class="row"><button type="button" class="btn btn-primary" data-nav="quote-start">▤ Cotizar</button><button type="button" class="btn btn-outline" data-action="new-catastro">＋ Nuevo catastro</button></div></div>
+    ?`<section class="partner-quote-cta"><div><strong>Venta directa · Consumidor Final</strong><p>Precios de lista, promociones y formas de pago.</p></div><div class="retail-entry-actions"><button class="btn btn-primary" type="button" data-action="quote-retail">▤ Cotizar consumidor final</button><button class="btn btn-outline" type="button" data-action="retail-quotes-open">⌕ Buscar proformas</button></div></section>`:"";
+  const isCensus=!isRetailMode();
+  const retailSetup = isRetailMode() && !retailButton
+    ? '<section class="card"><strong>Configurar Consumidor Final</strong><p class="card-sub">No se ha asignado el contacto de ventas para esta empresa. Solicite al administrador completar la configuración comercial.</p><button type="button" class="btn btn-outline" data-nav="quote-start">Ver requisitos</button></section>' : '';
+  const body = `${retailButton}${retailSetup}${isCensus?`<div class="home-tools"><span>Mis clientes</span><div class="row"><button type="button" class="btn btn-primary" data-nav="quote-start">▤ Cotizar</button><button type="button" class="btn btn-outline" data-action="new-catastro">＋ Nuevo catastro</button></div></div>
     <input id="partner-search" class="search" placeholder="Buscar por RUC, nombre, ciudad…" value="${esc(state.search)}"/>
     <div class="cards">${partners.map(partnerCard).join("") || `<div class="empty"><b>No hay catastros en el dispositivo</b>${state.online?"Pulse actualizar o cree uno nuevo.":"Conéctese una vez para descargar sus catastros."}</div>`}</div>`:''}`;
-  $app.innerHTML = shell(state.meta?.capabilities?.census_role===false?"Cotizador de tienda":"Mis catastros", body, { fab:state.meta?.capabilities?.census_role!==false, nav:"home" });
+  $app.innerHTML = shell(isRetailMode()?"Ventas de Tienda":"Mis catastros", body, { fab:!isRetailMode(), nav:"home" });
 }
 
 function renderQuoteStart() {
   const cap=state.meta?.capabilities||{};
   const canCreate=cap.quote_create===true;
-  const census=cap.census_role!==false;
+  const census=!isRetailMode() && cap.census_role!==false;
   const hasRetail=Boolean(cap.quote_retail_role);
   const customer=cap.quote_retail_partner;
   const q=(state.quotePartnerSearch||'').trim().toLocaleLowerCase();
@@ -427,10 +452,10 @@ function renderQuoteStart() {
   let sections='';
   if(!canCreate) sections+='<section class="card"><strong>Faltan permisos de Ventas</strong><p class="card-sub">El administrador debe otorgar permiso para crear cotizaciones en Odoo a este usuario. Los accesos seguirán visibles.</p></section>';
   if(hasRetail) {
-    sections+=`<section class="partner-quote-cta quote-entry-card"><div><strong>Venta directa · Consumidor Final</strong><p>${customer?'Cotice para '+esc(customer.name)+' en '+esc(state.meta?.user?.company_name||'la empresa activa')+'.':'Falta asignar el contacto Consumidor Final a la empresa activa. Un administrador debe configurarlo en Catastro → Configuración.'}</p></div>
+    sections+=`<section class="partner-quote-cta quote-entry-card"><div><strong>Venta directa · Consumidor Final</strong><p>${customer?'Cotice para '+esc(customer.name)+' en '+esc(state.meta?.user?.company_name||'la empresa activa')+'.':'Falta asignar el contacto Consumidor Final a la empresa activa. Un administrador debe configurarlo en las opciones comerciales.'}</p></div>
       <div class="retail-entry-actions"><button type="button" class="btn btn-primary" data-action="quote-retail" ${canCreate&&customer?'':'disabled'}>▤ Crear cotización de tienda</button><button type="button" class="btn btn-outline" data-action="retail-quotes-open" ${cap.quote_read&&customer?'':'disabled'}>⌕ Buscar proformas</button></div></section>`;
   } else {
-    sections+='<section class="card quote-entry-info"><strong>Venta directa · Consumidor Final</strong><p class="card-sub">Esta opción necesita el grupo «Catastro PWA: cotizador de tienda», además de configurar el contacto Consumidor Final de la empresa activa. El administrador puede habilitarlo en Odoo → Ajustes → Usuarios.</p></section>';
+    sections+='<section class="card quote-entry-info"><strong>Venta directa · Consumidor Final</strong><p class="card-sub">Esta opción requiere el perfil Cotizador de tienda y un cliente Consumidor Final configurado por empresa.</p></section>';
   }
   if(census) {
     sections+=`<section class="card quote-entry-customers"><div class="row space"><strong>Cotizar a un cliente de Catastro</strong><span class="chip">${locked.length} protegidos</span></div>
@@ -562,7 +587,7 @@ function renderDetail() {
       <button type="button" class="btn btn-primary partner-quote-button" data-action="quote-partner" data-id="${p.id}" ${locked?"":"disabled"}>▤ Crear cotización</button>
     </section>
     ${detailWorkflow(p)}
-    <div class="section-title">Operación comercial</div><div class="action-grid"><button class="btn btn-primary" data-action="visit-partner" data-id="${p.id}" ${locked?"":"disabled"}>＋ Nueva visita</button><a class="btn btn-outline" href="/web#id=${p.id}&model=res.partner&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div>
+    <div class="section-title">Operación comercial</div><div class="action-grid"><button class="btn btn-primary" data-action="visit-partner" data-id="${p.id}" ${locked?"":"disabled"}>＋ Nueva visita</button></div>
     <div class="section-title">Bitácora reciente</div><section class="card">${timeline(p.id)}</section></div>
     <div class="detail-secondary"><div class="section-title">Contacto</div><section class="card"><div class="card-sub">${esc(p.phone||p.mobile||"Sin teléfono")}<br>${esc(p.email||"Sin email")}<br>${esc(partnerAddress(p)||"Sin dirección")}</div><div class="section-title">Horario de atención</div>${hoursSummary(p)}</section>
     <div class="section-title">Productos proformados</div><section class="card">${prod.length?prod.map(x=>`<div class="product-row"><div><strong>${esc(x.product_name)}</strong><br><span>${x.lines} líneas · promedio ${money(x.avg_price)}</span></div><div style="text-align:right"><strong>${money(x.qty)}</strong><br><span>${money(x.subtotal)}</span></div></div>`).join(""):`<div class="empty">Sin productos almacenados todavía.</div>`}</section></div></div>`;
@@ -577,10 +602,7 @@ function canNegotiateQuote() {
 }
 function quotePartner() { return state.partners.find(p=>p.id===Number(state.quotePartnerId))
   || (state.quoteRetail&&Number(state.quotePartnerId)===Number(state.meta?.capabilities?.quote_retail_partner?.id)?state.meta.capabilities.quote_retail_partner:null); }
-function nativeQuotationsUrl() {
-  const action=Number(state.meta?.capabilities?.sales_action_id||0);
-  return action>0?`/web#action=${action}&model=sale.order&view_type=list`:'/web';
-}
+
 function quoteSelectionCount(){return Object.keys(state.quoteSelections).length;}
 function quoteImage(product, large=false) {
   if (!product?.has_image) return '<span class="quote-no-photo" aria-hidden="true">▧</span>';
@@ -959,7 +981,6 @@ function renderQuote() {
         ${cap.quote_product_promotions_supported?'<p class="small">Los descuentos porcentuales compatibles se aplican por artículo según las reglas de Odoo. Las recompensas de dinero o productos gratis requieren tratamiento distinto. Puede elegir una promoción en la revisión.</p>':''}
         ${cap.quote_loyalty_supported&&!cap.quote_product_promotions_supported?`<div class="field"><label>Código promocional (opcional)</label><input id="quote-loyalty-code" value="${esc(state.quoteLoyaltyCode)}" maxlength="100" placeholder="Código de descuento o promoción" ${state.editingQuoteId?'disabled':''}/></div><p class="small">${state.editingQuoteId?'Para cambiar códigos o recompensas, guarde los cambios y use «Promociones» en el detalle del borrador.':'Los descuentos disponibles se aplicarán al guardar la proforma.'}</p>`:'<p class="small">Para usar Loyalty, habilite las promociones nativas de Ventas en Odoo.</p>'}
       </details>
-      <a class="shop-native-link" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener">Abrir formulario completo de Odoo</a>
     </section>
     ${state.quoteView!=='review'?`<section class="form-card shop-catalog"><div class="shop-catalog-heading"><div><div class="eyebrow">Catálogo · 40 recientes al entrar</div><h2>Elija productos para la proforma</h2></div><span class="shop-warehouse-tag">${esc((cap.quote_warehouses||[]).find(w=>Number(w.id)===Number(state.quoteWarehouseId))?.name||'Seleccione bodega')}</span></div>
       <div class="shop-search-box"><span aria-hidden="true">⌕</span><input id="quote-search" aria-label="Buscar productos" value="${esc(state.quoteSearch)}" placeholder="Buscar por nombre, SKU o código" autocomplete="off" ${state.quoteWarehouseId?'':'disabled'}/></div>
@@ -1015,7 +1036,7 @@ function renderQuoteDetail() {
     <div class="field"><label for="quote-whatsapp-phone">Número de WhatsApp (con código de país)</label><input id="quote-whatsapp-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej.: +593 99 123 4567"/></div>
     <button type="button" class="btn btn-outline" data-action="quote-open-whatsapp">Abrir chat de WhatsApp</button>
     <p class="small">${!window.isSecureContext?'Este sitio usa HTTP: el navegador no permite compartir archivos directamente. Descargue el PDF, abra WhatsApp y adjúntelo. Configure HTTPS en el servidor para habilitar compartir el PDF desde el dispositivo.':'«Compartir PDF» abre el selector de aplicaciones compatibles. La persona usuaria elige WhatsApp y confirma el envío; abrir un chat solo no adjunta archivos.'}</p></div>
-    <div class="action-grid">${q.state==='draft'&&q.can_edit?`<button class="btn btn-primary" type="button" data-action="edit-quote-draft" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>✎ Editar borrador</button>`:''}${state.meta?.capabilities?.quote_retail_role&&q.partner_id===state.meta?.capabilities?.quote_retail_partner?.id?`<button class="btn btn-secondary" type="button" data-action="retail-quote-duplicate" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>Duplicar</button>`:''}<button class="btn btn-secondary" data-action="back-quote">← Volver</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
+    <div class="action-grid">${q.state==='draft'&&q.can_edit?`<button class="btn btn-primary" type="button" data-action="edit-quote-draft" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>✎ Editar borrador</button>`:''}${state.meta?.capabilities?.quote_retail_role&&q.partner_id===state.meta?.capabilities?.quote_retail_partner?.id?`<button class="btn btn-secondary" type="button" data-action="retail-quote-duplicate" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>Duplicar</button>`:''}<button class="btn btn-secondary" data-action="back-quote">← Volver</button></div></section>
     <aside class="quote-side"><section class="card"><div class="card-title">Registro</div><div class="card-sub">Referencia: ${esc(q.client_order_ref||"—")}<br>Visita: ${q.visit_id?"#"+Number(q.visit_id):"No asociada"}<br>Empresa: ${esc(q.company_name)}</div></section></aside></div>`;
   $app.innerHTML=shell(q.name,body,{nav:"quote-start"});
 }
@@ -1260,7 +1281,7 @@ function pendingQuoteWarehousePicker(op){
     <div class="small">Al sincronizar, Odoo validará los productos y cantidades usando esta bodega. Puede rechazar la operación si el stock cambió.</div></div>`;
 }
 function renderPending() {
-  const pending = [...state.pending].sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
+  const pending = [...pendingVisible()].sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
   const body = `<div class="row" style="margin-bottom:12px"><button class="btn btn-primary" style="width:100%" data-action="sync">⇅ Sincronizar ahora</button></div>
     <div class="cards">${pending.map(op=>`<section class="card pending-item"><div><div class="card-title">${esc(operationLabel(op))}</div><div class="card-sub">${esc(op.label||"")}</div><div class="chips"><span class="chip ${op.state==="error"?"danger":op.state==="conflict"?"warn":op.state==="synced"?"ok":""}">${esc(op.state||"pendiente")}</span></div>${op.message?`<div class="small ${op.state==="error"?"danger-text":""}" style="margin-top:8px">${esc(op.message)}</div>`:""}${op.result_model==="res.partner" && op.result_id && ["synced","warning"].includes(op.state)?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-result" data-id="${op.result_id}">Ver catastro</button>`:""}${op.result_model==="sale.order" && op.result_id && op.state==="synced"?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-quote-result" data-id="${op.result_id}">Ver cotización</button>`:""}${pendingQuoteWarehousePicker(op)}<div class="pending-meta">${esc(dateText(op.created_at))}</div></div><div><button class="icon-btn" data-delete-pending="${op.uuid}" title="Eliminar del dispositivo">×</button></div></section>`).join("") || `<div class="empty"><b>Todo sincronizado</b>No hay información pendiente en este dispositivo.</div>`}</div>`;
   $app.innerHTML = shell("Pendientes", body, { nav:"pending" });
@@ -1271,14 +1292,29 @@ function renderMore() {
   const saved = state.meta?.saved_at ? dateText(state.meta.saved_at) : "Nunca";
   const canInstall = Boolean(installPrompt);
   const body = `<section class="card ${secure?"":"install-card"}"><div class="card-title">${secure?"Modo offline completo":"Modo offline limitado por HTTP"}</div><div class="card-sub" style="${secure?"":"color:rgba(255,255,255,.86)"}">${secure?(state.localReady?"La app puede abrirse y capturar datos sin cobertura después de sincronizar.":"La app funciona online mientras se conecta al almacenamiento local. El guardado offline solo estará disponible cuando termine la conexión."):"Puede seguir capturando si pierde señal mientras esta pantalla permanece abierta. Para abrir la app desde cero sin Internet e instalarla como PWA, el servidor debe usar HTTPS."}</div>${canInstall?'<button class="btn" data-action="install">Instalar app</button>':""}</section>
-    <section class="card"><div class="card-title">Datos del dispositivo</div><div class="card-sub">Usuario: ${esc(state.meta?.user?.name||"Sin descargar")}<br>Empresa: ${esc(state.meta?.user?.company_name||"")}<br>Última descarga: ${esc(saved)}<br>Pendientes: ${state.pending.filter(x=>x.state!=="synced").length}</div><div class="action-grid"><button class="btn btn-outline" data-action="refresh">Descargar datos</button><button class="btn btn-danger" data-action="clear-local" ${db?"":"disabled"}>Borrar caché local</button></div></section>
-    <section class="card"><div class="card-title">Datos sin conexión</div><div class="card-sub">${state.localReady?"Almacenamiento local conectado. Puede preparar registros offline.":state.storageError?"No se pudo acceder al almacenamiento local. Online se guarda directamente en Odoo; para trabajar sin conexión revise los permisos del navegador y cierre otras pestañas de Catastro.":"Preparando almacenamiento local en segundo plano. Puede trabajar online mientras tanto."}</div>${!state.localReady?'<button type="button" class="btn btn-outline" data-action="retry-storage" style="margin-top:10px">Reintentar almacenamiento</button>':""}</section>
-    <section class="card"><div class="card-title">Versión de la aplicación: ${esc(APP_VERSION)}</div><div class="card-sub">Si no aparece «Crear cotización» dentro de la ficha del catastro o ves una versión anterior, actualiza la interfaz. Esta acción no elimina catastros, visitas ni cotizaciones pendientes de sincronización.</div><button class="btn btn-secondary" style="width:100%;margin-top:12px" type="button" data-action="update-ui">↻ Actualizar interfaz PWA</button></section>
-    <section class="card"><div class="card-title">Odoo completo</div><div class="card-sub">La PWA crea borradores rápidos. Para todas las funciones nativas, extensiones y campos personalizados de Ventas, utiliza el formulario completo de Odoo hasta que integremos los módulos que modifican tus proformas.</div><a class="btn btn-primary" style="width:100%;margin-top:12px" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener">Abrir cotizaciones completas</a></section>`;
+    <section class="card"><div class="card-title">Datos del dispositivo</div><div class="card-sub">Usuario: ${esc(state.meta?.user?.name||"Sin descargar")}<br>Empresa: ${esc(state.meta?.user?.company_name||"")}<br>Última descarga: ${esc(saved)}<br>Pendientes: ${pendingVisible().filter(x=>x.state!=="synced").length}</div><div class="action-grid"><button class="btn btn-outline" data-action="refresh">Descargar datos</button>${isRetailMode()?"":`<button class="btn btn-danger" data-action="clear-local" ${db?"":"disabled"}>Borrar caché local</button>`}</div></section>
+    <section class="card"><div class="card-title">Datos sin conexión</div><div class="card-sub">${state.localReady?"Almacenamiento local conectado. Puede preparar registros offline.":state.storageError?"No se pudo acceder al almacenamiento local. Online se guarda directamente en el servidor; para trabajar sin conexión revise los permisos del navegador y cierre otras pestañas de la app.":"Preparando almacenamiento local en segundo plano. Puede trabajar online mientras tanto."}</div>${!state.localReady?'<button type="button" class="btn btn-outline" data-action="retry-storage" style="margin-top:10px">Reintentar almacenamiento</button>':""}</section>
+    <section class="card"><div class="card-title">Versión de la aplicación: ${esc(APP_VERSION)}</div><div class="card-sub">${isRetailMode()?'Si no aparece la opción de cotizaciones o ves una versión anterior, actualiza la interfaz. Se conservarán las operaciones pendientes.':'Si no aparece «Crear cotización» dentro de la ficha del catastro o ves una versión anterior, actualiza la interfaz. Esta acción no elimina catastros, visitas ni cotizaciones pendientes de sincronización.'}</div><button class="btn btn-secondary" style="width:100%;margin-top:12px" type="button" data-action="update-ui">↻ Actualizar interfaz PWA</button></section>
+`;
   $app.innerHTML = shell("Más", body, { nav:"more" });
 }
 
 function render() {
+  // No mostrar ni una fracción de segundo el menú Campo antes de consultar
+  // el perfil actual: el grupo Tienda pudo haberse asignado desde Odoo.
+  if (state.online && !state.profileVerified) {
+    $app.innerHTML = `<div class="boot-screen"><div class="boot-logo">C</div><strong>Gestión Comercial</strong><span>${state.lastError?esc(state.lastError):'Comprobando perfil de usuario…'}</span>${state.lastError?'<button class="btn btn-primary" data-action="refresh">Reintentar</button>':''}</div>`;
+    return;
+  }
+  if (!state.meta?.capabilities) {
+    $app.innerHTML = `<div class="boot-screen"><div class="boot-logo">C</div><strong>Gestión Comercial</strong><span>Conéctese para identificar su perfil y descargar sus datos.</span></div>`;
+    return;
+  }
+  document.title = isRetailMode() ? "Ventas de Tienda" : "Catastro de Campo";
+  if (isRetailMode() && ["detail", "visit", "new", "edit"].includes(state.page)) {
+    state.page = "home";
+    state.selectedPartnerId = null;
+  }
   switch (state.page) {
     case "detail": return renderDetail();
     case "visit": return renderVisit();
@@ -1426,7 +1462,7 @@ async function syncPending(silent=false, onlyUuids=null) {
   // operaciones que sí están persistidas en la cola local.
   if (!db || !state.localReady) return;
   if (!navigator.onLine || state.syncing || state.sessionBlocked) return;
-  const candidates = state.pending.filter(x => !["synced","warning","conflict"].includes(x.state) && (!onlyUuids || onlyUuids.includes(x.uuid))).sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
+  const candidates = pendingVisible().filter(x => !["synced","warning","conflict"].includes(x.state) && (!onlyUuids || onlyUuids.includes(x.uuid))).sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
   if (!candidates.length) return;
   try {
     state.syncing = true; render();
@@ -1622,14 +1658,16 @@ $app.addEventListener('input',(event)=>{
 
 $app.addEventListener("click", async (event) => {
   const navEl = event.target.closest("[data-nav]");
-  if (navEl) { state.page=navEl.dataset.nav;
+  if (navEl) {
+    if (isRetailMode() && ["detail", "visit", "new", "edit"].includes(navEl.dataset.nav)) return;
+    state.page=navEl.dataset.nav;
     if (state.page==="quote") { state.quotePartnerId=state.selectedPartnerId||state.quotePartnerId;state.quoteDetail=null; }
     if(state.page!=="detail") state.selectedPartnerId=["visit","quote"].includes(state.page)?state.selectedPartnerId:null;
     render(); return; }
   const categoryEl = event.target.closest('[data-quote-category]');
   if(categoryEl){state.quoteCategory=categoryEl.dataset.quoteCategory;renderQuoteResults();return;}
   const partnerEl = event.target.closest("[data-open-partner]");
-  if (partnerEl) { state.selectedPartnerId=Number(partnerEl.dataset.openPartner); state.page="detail"; render(); return; }
+  if (partnerEl) { if(isRetailMode())return; state.selectedPartnerId=Number(partnerEl.dataset.openPartner); state.page="detail"; render(); return; }
   const visitEl = event.target.closest("[data-action='visit-partner']");
   if (visitEl) { state.selectedPartnerId=Number(visitEl.dataset.id); if(!truthy(selectedPartner()?.census_locked)){alert("Finalice y proteja primero el catastro.");return;} state.page="visit"; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
@@ -1699,7 +1737,7 @@ $app.addEventListener("click", async (event) => {
     state.quoteWarehouseId=null;state.quotePricelistId=null;state.quotePaymentOptionId=null;state.quoteLoyaltyCode='';
     state.quoteSearch='';state.quoteDetail=null;state.page='quote';render();return;
   }
-  if (action === "quote-partner") {state.quoteRetail=false;state.quoteView="catalog";const id=Number(event.target.closest("[data-id]")?.dataset.id);const partner=state.partners.find(x=>x.id===id);if (!truthy(partner?.census_locked)){alert("Primero finalice y proteja el catastro.");return;}state.selectedPartnerId=id;state.quotePartnerId=id;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};state.quoteWarehouseId=null;state.quotePricelistId=null;state.quoteSearch="";state.quoteDetail=null;state.page="quote";render();return;}
+  if (action === "quote-partner") {if(isRetailMode())return;state.quoteRetail=false;state.quoteView="catalog";const id=Number(event.target.closest("[data-id]")?.dataset.id);const partner=state.partners.find(x=>x.id===id);if (!truthy(partner?.census_locked)){alert("Primero finalice y proteja el catastro.");return;}state.selectedPartnerId=id;state.quotePartnerId=id;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};state.quoteWarehouseId=null;state.quotePricelistId=null;state.quoteSearch="";state.quoteDetail=null;state.page="quote";render();return;}
   if (action === "back-to-partner") {state.editingQuoteId=null;state.editingQuoteRevision=null;state.editingQuoteName='';state.editingQuoteSourceLineIds=[];if(state.quoteRetail){state.page="home";render();return;}state.selectedPartnerId=Number(state.quotePartnerId)||state.selectedPartnerId;state.page="detail";render();return;}
   if (action === "update-ui") {
     if (!navigator.onLine) {alert("Conéctese a Internet para descargar la nueva versión. Sus registros locales se conservan.");return;}
@@ -1800,7 +1838,7 @@ $app.addEventListener("click", async (event) => {
     const id=Number(event.target.closest("[data-id]")?.dataset.id);
     const c=state.candidateMatches.find(x=>x.id===id);
     if (!c) return;
-    if (c.can_open) {const p=state.partners.find(x=>x.id===id);if(p){state.selectedPartnerId=id;state.page="detail";render();}else window.open(`/web#id=${id}&model=res.partner&view_type=form`,"_blank","noopener");return;}
+    if (c.can_open) {const p=state.partners.find(x=>x.id===id);if(p){state.selectedPartnerId=id;state.page="detail";render();}else alert("El cliente no está en la lista descargada. Actualice los datos para abrirlo.");return;}
     if (!c.can_use) return;
     const form=document.querySelector("#catastro-form");if(!form)return;
     form.querySelector('[name="selected_partner_id"]').value=String(id);
@@ -1837,7 +1875,7 @@ $app.addEventListener("click", async (event) => {
   }
   if (action === "retry-storage") {void restoreLocalStorage();render();return;}
   if (action === "refresh") { await syncPending(true); await refreshFromServer(true); return; }
-  if (action === "new-catastro") { state.page="new"; render(); return; }
+  if (action === "new-catastro") { if(isRetailMode())return; state.page="new"; render(); return; }
   if (action === "edit-partner") {if(!truthy(selectedPartner()?.census_can_edit_master)){alert("El catastro está protegido; solicite habilitación.");return;} state.page="edit"; render(); return; }
   if (action === "cancel-edit") { state.page="detail"; render(); return; }
   if (action === "fix-quote-warehouse") {
@@ -1944,5 +1982,5 @@ async function init() {
 init().catch((err) => {
   console.error("Error iniciando Catastro PWA", err);
   if (window.catastroBootError) window.catastroBootError(err.message || String(err));
-  else $app.innerHTML = `<div class="boot-screen"><div class="boot-logo">!</div><strong>No se pudo iniciar la app</strong><span>${esc(err.message || err)}</span><a class="btn btn-primary" href="/web">Volver a Odoo</a></div>`;
+  else $app.innerHTML = `<div class="boot-screen"><div class="boot-logo">!</div><strong>No se pudo iniciar la app</strong><span>${esc(err.message || err)}</span><button class="btn btn-primary" onclick="window.location.reload()">Reintentar</button></div>`;
 });
