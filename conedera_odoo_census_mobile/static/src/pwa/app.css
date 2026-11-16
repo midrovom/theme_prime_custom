@@ -438,3 +438,21 @@ button{cursor:pointer}
 .shop-internal-locations li{display:flex;justify-content:space-between;gap:8px;min-width:0;overflow-wrap:anywhere}
 .shop-internal-locations li span{min-width:0}
 .shop-internal-locations li b{white-space:nowrap}
+
+/* v18.0.1.5.29 - porcentaje ofrecido dentro de promociones Loyalty */
+.shop-promo-grant,.quote-promo-grant {
+  display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;
+  margin:0.65rem 0;padding:0.7rem 0.8rem;
+  border:1px solid var(--border, #e2dceb);border-radius:0.85rem;
+  font-size:0.88rem;min-width:0;
+}
+.shop-promo-grant span,.quote-promo-grant {font-weight:600;}
+.shop-promo-grant input,.quote-promo-grant input {
+  width:6.5rem;max-width:100%;min-width:5.5rem;min-height:2.5rem;
+  margin-left:auto;border-radius:0.65rem;padding:0.25rem 0.55rem;
+  border:1px solid #d1c7df;font-size:1rem;
+}
+@media(max-width:400px){
+  .shop-promo-grant,.quote-promo-grant{align-items:stretch;}
+  .shop-promo-grant input,.quote-promo-grant input{margin-left:0;}
+}

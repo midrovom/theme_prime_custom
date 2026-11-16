@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.28";
+const APP_VERSION = "18.0.1.5.29";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -638,7 +638,9 @@ function quoteLineTaxPreview(line, fallback=null) {
     const offer=(state.quotePromoOffers[line.id]||[]).find(x=>Number(x.id)===promoId);
     // Si cambió la cantidad o caducó la elegibilidad, NO mostrar el precio
     // viejo como si la promoción hubiera sido validada.
-    if (!offer || offer.tax_price_source!=='server' || Number(offer.qty_priced)!==qty)
+    if (!offer || offer.tax_price_source!=='server' || Number(offer.qty_priced)!==qty ||
+       (line?.promo_offered_percent!==null && line?.promo_offered_percent!==undefined &&
+        Number(offer.applied_discount_percent ?? offer.discount)!==Number(line.promo_offered_percent)))
       return {preview:null,offer:null,pending:true,promoId};
     return {preview:offer,offer,pending:false,promoId};
   }
@@ -690,7 +692,7 @@ function renderQuoteResults() {
     const eligibleOffers=state.quotePromoOffers[p.id]||[];
     const chosenOffer=added && eligibleOffers.find(offer=>Number(offer.id)===Number(added.promo_reward_id));
     const giftBadge=added && chosenOffer
-      ?`<span class="shop-promo-gift" aria-label="Promoción aplicada">🎁 ${esc(chosenOffer.name)} · ${money(chosenOffer.discount)}% descuento</span>`
+      ?`<span class="shop-promo-gift" aria-label="Promoción aplicada">🎁 ${esc(chosenOffer.name)} · ${money(added.promo_offered_percent??chosenOffer.discount)}% de descuento</span>`
       :eligibleOffers.length?`<span class="shop-promo-gift" aria-label="Promoción disponible">🎁 Promoción disponible</span>`:'';
     // Solo se publican importes devueltos por el motor de impuestos de Odoo.
     // No calcular IVA ni cargos en JS: puede haber impuestos incluidos,
@@ -748,6 +750,7 @@ function renderQuoteResults() {
       ${warehousesMarkup}
       ${locationMarkup}
       ${promoPicker}
+      ${added&&chosenOffer&&state.meta?.capabilities?.quote_promo_flexible_supported?`<label class="shop-promo-grant"><span>Descuento a ofrecer (máximo ${money(chosenOffer.discount)}%)</span><input type="number" inputmode="decimal" min="0" max="${Number(chosenOffer.discount)}" step="0.1" value="${esc(added.promo_offered_percent??chosenOffer.discount)}" data-quote-promo-percent="${p.id}" aria-label="Porcentaje de descuento a ofrecer en ${esc(p.name)}" /></label>`:''}
       <p class="shop-price-footnote">${priceFootnote}</p>
       <div class="shop-product-actions">
         <label class="shop-qty">Cantidad<input type="number" data-quote-search-qty="${p.id}" step="any" min="0.001" max="100000" inputmode="decimal" value="${esc(added?.qty??1)}" aria-label="Cantidad de ${esc(p.name)}"/></label>
@@ -795,7 +798,9 @@ function quoteLinesMarkup() {
       <select data-quote-promo="${line.id}" aria-label="Elegir promoción para ${esc(line.name)}">
       <option value="0" ${Number(line.promo_reward_id)===0?'selected':''}>Sin promoción</option>
       ${(state.quotePromoOffers[line.id]||[]).map(offer=>`<option value="${Number(offer.id)}" ${Number(line.promo_reward_id)===Number(offer.id)?'selected':''}>${esc(offer.name)} · ${money(offer.discount)}% descuento</option>`).join('')}
-      </select></div>` : ''}</div>
+      </select></div>` : ''}
+    ${state.meta?.capabilities?.quote_promo_flexible_supported && Number(line.promo_reward_id) ?
+        `<label class="quote-promo-grant">Descuento ofrecido (máx. ${money((state.quotePromoOffers[line.id]||[]).find(x=>Number(x.id)===Number(line.promo_reward_id))?.discount??0)}%)<input type="number" inputmode="decimal" min="0" max="${Number((state.quotePromoOffers[line.id]||[]).find(x=>Number(x.id)===Number(line.promo_reward_id))?.discount??0)}" step="0.1" value="${esc(line.promo_offered_percent??(state.quotePromoOffers[line.id]||[]).find(x=>Number(x.id)===Number(line.promo_reward_id))?.discount??0)}" data-quote-promo-percent="${line.id}" /></label>`:''}</div>
     <div class="quote-line-controls"><label>Cantidad<input type="number" inputmode="decimal" min="0.001" max="100000" step="any" value="${esc(line.qty)}" data-quote-qty="${line.id}" required/></label>
     ${canNegotiateQuote()?`<label>Precio negociado (negotiable_price) · ${esc(line.currency||'moneda de lista')}<input type="number" data-quote-negotiable="${line.id}" inputmode="decimal" min="0" max="1000000000" step="any" placeholder="Sin negociar" value="${esc(line.negotiable_price??'')}" /></label>`:''}
     <button type="button" class="icon-btn quote-remove" title="Quitar producto" aria-label="Quitar ${esc(line.name)}" data-action="quote-remove-product" data-id="${line.id}">×</button></div></div>`).join(''):
@@ -921,10 +926,17 @@ async function refreshQuotePromos(request) {
     state.quotePromoOffers={};state.quotePromoMessage='';return;
   }
   const snapshot=state.quoteLines.map(line=>({product_id:Number(line.id),qty:Number(line.qty)}));
+  const offered={};
+  if(state.meta?.capabilities?.quote_promo_flexible_supported){
+    for(const line of state.quoteLines){
+      if(Number(line.promo_reward_id)>0 && line.promo_offered_percent!==null && line.promo_offered_percent!==undefined)
+        offered[String(line.id)]={reward_id:Number(line.promo_reward_id),percent:Number(line.promo_offered_percent)};
+    }
+  }
   try {
     const data=await rpc('/catastro/app/quote/promotions/preview',{
       partner_id:state.quotePartnerId,warehouse_id:state.quoteWarehouseId,
-      pricelist_id:state.quotePricelistId||null,lines:snapshot
+      pricelist_id:state.quotePricelistId||null,lines:snapshot,offered_discounts:offered
     });
     if(request!==state.quotePromoRequest || state.page!=='quote')return;
     const offers={};
@@ -934,8 +946,11 @@ async function refreshQuotePromos(request) {
       const choices=offers[line.id]||[];
       const selected=line.promo_reward_id;
       // Undefined/null means "auto-select best offer"; explicit zero opts out.
-      if(selected===undefined || selected===null){line.promo_reward_id=choices.length?choices[0].id:0;}
-      else if(Number(selected)!==0 && !choices.some(o=>Number(o.id)===Number(selected))){line.promo_reward_id=0;}
+      if(selected===undefined || selected===null){line.promo_reward_id=choices.length?choices[0].id:0;line.promo_offered_percent=null;}
+      else if(Number(selected)!==0 && !choices.some(o=>Number(o.id)===Number(selected))){line.promo_reward_id=0;line.promo_offered_percent=null;}
+      const active=choices.find(o=>Number(o.id)===Number(line.promo_reward_id));
+      if(active && (line.promo_offered_percent===null || line.promo_offered_percent===undefined))
+        line.promo_offered_percent=Number(active.discount);
     }
     state.quotePromoMessage='Promociones actualizadas según la selección.';
     refreshQuoteLineMarkup();
@@ -1087,7 +1102,8 @@ async function editSavedQuote(id){
     state.quoteLines=editable.map(line=>({...products.get(Number(line.product_id)),
       id:line.product_id,qty:line.qty,qty_priced:line.qty,sale_line_id:line.id,
       negotiable_price:canNegotiateQuote()?line.negotiable_price:null,
-      promo_reward_id:line.promo_reward_id||null}));
+      promo_reward_id:line.promo_reward_id||null,
+      promo_offered_percent:line.promo_offered_percent??null}));
     state.quoteView='review';state.page='quote';render();scheduleQuotePromos();window.scrollTo({top:0,behavior:'instant'});
   }catch(err){alert(err.message||String(err));}
 }
@@ -1135,7 +1151,8 @@ async function submitQuote(form) {
   if (!state.quoteWarehouseId){alert("Seleccione una bodega antes de guardar la cotización.");return;}
   const lines=state.quoteLines.map(x=>({product_id:Number(x.id),qty:Number(x.qty),
     negotiable_price:x.negotiable_price==null||String(x.negotiable_price).trim()===''?null:Number(x.negotiable_price),
-    promo_reward_id:x.promo_reward_id??null}));
+    promo_reward_id:x.promo_reward_id??null,
+    promo_offered_percent:state.meta?.capabilities?.quote_promo_flexible_supported?(x.promo_offered_percent??null):null}));
   if(lines.some(x=>!Number.isInteger(x.product_id)||!Number.isFinite(x.qty)||x.qty<=0||x.qty>100000 ||
     (x.negotiable_price!==null && (!Number.isFinite(x.negotiable_price)||x.negotiable_price<0||x.negotiable_price>1000000000)))) {alert("Revise las cantidades y los precios negociados.");return;}
   for(const line of state.quoteLines){
@@ -1166,7 +1183,8 @@ async function submitQuote(form) {
         lines:state.quoteLines.map(x=>({sale_line_id:x.sale_line_id||0,
           product_id:Number(x.id),qty:Number(x.qty),
           negotiable_price:canNegotiateQuote()?x.negotiable_price:null,
-          promo_reward_id:x.promo_reward_id??null})),
+          promo_reward_id:x.promo_reward_id??null,
+          promo_offered_percent:state.meta?.capabilities?.quote_promo_flexible_supported?(x.promo_offered_percent??null):null})),
       });
       state.editingQuoteId=null;state.editingQuoteRevision=null;state.editingQuoteName='';state.editingQuoteSourceLineIds=[];
       state.quoteDetail=updated;state.currentQuoteId=updated.id;state.page='quote-detail';
@@ -1628,9 +1646,25 @@ $app.addEventListener("change", (event) => {
     const line=state.quoteLines.find(x=>Number(x.id)===Number(event.target.dataset.quotePromo));
     if(line){
       line.promo_reward_id=Number(event.target.value)||0;
-      // El precio con impuestos ya viene calculado para cada oferta. No
-      // esperar al guardado ni recalcular impuestos en el navegador.
+      const chosen=(state.quotePromoOffers[line.id]||[]).find(o=>Number(o.id)===Number(line.promo_reward_id));
+      line.promo_offered_percent=chosen?Number(chosen.discount):null;
       refreshQuoteLineMarkup();renderQuoteResults();
+      scheduleQuotePromos();
+    }
+  }
+  if(event.target?.matches('[data-quote-promo-percent]')){
+    const line=state.quoteLines.find(x=>Number(x.id)===Number(event.target.dataset.quotePromoPercent));
+    if(line){
+      const max=Number((state.quotePromoOffers[line.id]||[]).find(o=>Number(o.id)===Number(line.promo_reward_id))?.discount);
+      const value=Number(event.target.value);
+      if(!Number.isFinite(value)||!Number.isFinite(max)||value<0||value>max){
+        alert(`El descuento debe estar entre 0% y ${money(max)}%.`);
+        event.target.value=line.promo_offered_percent??max;
+      }else{
+        line.promo_offered_percent=value;
+        scheduleQuotePromos(); // El servidor calcula de nuevo el total con IVA.
+        refreshQuoteLineMarkup();renderQuoteResults();
+      }
     }
   }
   if (event.target?.matches('[data-quote-qty]')) scheduleQuotePrices();

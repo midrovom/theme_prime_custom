@@ -364,7 +364,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.28",
+                "pwa_server_version": "18.0.1.5.29",
                 "census_role": census_role,
                 "quote_retail_role": retail_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
@@ -376,6 +376,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_payment_options": self._quote_payment_options(),
                 "quote_loyalty_supported": self._quote_loyalty_enabled(),
                 "quote_product_promotions_supported": hasattr(request.env["sale.order"], "catastro_pwa_product_promotion_choices"),
+                "quote_promo_flexible_supported": "catastro_pwa_promo_granted_percent" in request.env["sale.order.line"]._fields,
                 "quote_warehouses": self._quote_warehouses(),
                 "quote_pricelists": self._quote_pricelists(),
                 "quote_stock_supported": "stock.warehouse" in request.env.registry,
@@ -1018,6 +1019,7 @@ class ConederaFieldAppController(http.Controller):
                        "price_unit": line.price_unit, "discount": line.discount,
                        "promo_reward_id": (line.catastro_pwa_promo_reward_id.id if "catastro_pwa_promo_reward_id" in line._fields else False),
                        "promo_name": (line.catastro_pwa_promo_reward_id.description if "catastro_pwa_promo_reward_id" in line._fields and line.catastro_pwa_promo_reward_id else ""),
+                       "promo_offered_percent": (line.catastro_pwa_promo_granted_percent if "catastro_pwa_promo_granted_percent" in line._fields and "catastro_pwa_promo_grant_set" in line._fields and line.catastro_pwa_promo_grant_set else None),
                        "negotiable_price": (line.negotiable_price if "negotiable_price" in line._fields else None),
                        "payment_base_price_unit": line.catastro_payment_base_price_unit if line.catastro_payment_surcharge_applied else line.price_unit,
                        "payment_surcharge_percent": line.catastro_payment_surcharge_percent,
@@ -1252,7 +1254,23 @@ class ConederaFieldAppController(http.Controller):
                 reward_lines.unlink()
             duplicated._update_programs_and_rewards()
         if hasattr(duplicated, "catastro_pwa_apply_product_promotions"):
-            duplicated.catastro_pwa_apply_product_promotions()
+            # Conservar el descuento MENOR al máximo al duplicar, siempre que
+            # la misma promoción siga elegible en la bodega actual. Si dejó
+            # de ser elegible, dejar que Loyalty la retire/recalcule.
+            preserved, chosen = {}, {}
+            if 'catastro_pwa_promo_granted_percent' in request.env['sale.order.line']._fields:
+                current_choices = duplicated.catastro_pwa_product_promotion_choices()
+                for line in before:
+                    if not (line.catastro_pwa_promo_grant_set and
+                            line.catastro_pwa_promo_grant_reward_id):
+                        continue
+                    pid = line.product_id.id
+                    rid = line.catastro_pwa_promo_grant_reward_id.id
+                    if any(int(o['id']) == rid for o in current_choices.get(pid, [])):
+                        chosen[pid] = rid
+                        preserved[pid] = {'reward_id': rid,
+                                          'percent': line.catastro_pwa_promo_granted_percent}
+            duplicated.with_context(catastro_pwa_requested_promo_percent=preserved).catastro_pwa_apply_product_promotions(chosen)
         else:
             duplicated.catastro_recompute_surcharge()
         return {'id': duplicated.id, 'name': duplicated.name,
@@ -1317,8 +1335,34 @@ class ConederaFieldAppController(http.Controller):
         self._quote_partner(order.partner_id.commercial_partner_id.id)
         return order
 
+    def _quote_offered_promotion_context(self, lines, selected_promos):
+        """Validate optional Loyalty negotiation request before changing the order.
+
+        The maximum is checked again against the REAL order by the inherited
+        loyalty addon, after eligibility and warehouse checks. No percentages
+        are trusted from a catalog cache or from the browser.
+        """
+        proposals = {}
+        for entry in lines:
+            if 'promo_offered_percent' not in entry or entry['promo_offered_percent'] is None:
+                continue
+            try:
+                product_id = int(entry['product_id'])
+                offered = float(entry['promo_offered_percent'])
+            except (ValueError, TypeError, KeyError):
+                raise ValidationError('Porcentaje negociado de promoción inválido.')
+            if not math.isfinite(offered) or offered < 0 or offered > 100:
+                raise ValidationError('El porcentaje de descuento debe estar entre 0 y 100.')
+            if not selected_promos.get(product_id):
+                raise ValidationError('Seleccione una promoción válida antes de indicar un porcentaje.')
+            if 'catastro_pwa_promo_granted_percent' not in request.env['sale.order.line']._fields:
+                raise ValidationError('Instale el complemento Loyalty negociable antes de ofrecer un descuento personalizado.')
+            proposals[product_id] = {'reward_id': selected_promos[product_id], 'percent': offered}
+        return {'catastro_pwa_requested_promo_percent': proposals}
+
     @http.route("/catastro/app/quote/promotions/preview", type="json", auth="user", methods=["POST"], readonly=True)
-    def quote_promotions_preview(self, partner_id, lines=None, warehouse_id=None, pricelist_id=None):
+    def quote_promotions_preview(self, partner_id, lines=None, warehouse_id=None, pricelist_id=None,
+                                 offered_discounts=None):
         """Read-only preview using the native Loyalty rule engine; no sale is created.
 
         Return only eligible percent discounts on individual products. Other
@@ -1335,6 +1379,12 @@ class ConederaFieldAppController(http.Controller):
             raise ValidationError("Seleccione una bodega para consultar promociones.")
         if not isinstance(lines, list) or len(lines) > 60:
             raise ValidationError("Revise los productos seleccionados.")
+        # client-proposed discount is a PERCENTAGE of the existing reward,
+        # never a direct modification of sale.order.line.discount/price_unit.
+        if offered_discounts is None:
+            offered_discounts = {}
+        if not isinstance(offered_discounts, dict) or len(offered_discounts) > 60:
+            raise ValidationError("Descuentos propuestos inválidos.")
         parsed = []
         for entry in lines:
             if not isinstance(entry, dict):
@@ -1393,8 +1443,37 @@ class ConederaFieldAppController(http.Controller):
                 tax_prices = self._quote_payment_tax_previews(
                     partner, product, list_price, pricelist,
                     fiscal_position, options, discount_percent=combined)
-                offers.append({**offer, **tax_prices, 'qty_priced': qty})
+                offer_data = {**offer, **tax_prices, 'qty_priced': qty,
+                              'max_discount_percent': float(offer['discount'])}
+                proposal = offered_discounts.get(str(pid), offered_discounts.get(pid))
+                if proposal is not None and not isinstance(proposal, dict):
+                    raise ValidationError('Porcentaje propuesto inválido.')
+                if proposal is not None and int(proposal.get('reward_id') or 0) == int(offer['id']):
+                    if "catastro_pwa_promo_granted_percent" not in request.env['sale.order.line']._fields:
+                        raise ValidationError("Instale el complemento Loyalty negociable antes de modificar el descuento.")
+                    try:
+                        proposed_pct = float(proposal['percent'])
+                    except (ValueError, TypeError, KeyError):
+                        raise ValidationError("Indique un porcentaje de promoción válido.")
+                    if not math.isfinite(proposed_pct) or proposed_pct < 0 or proposed_pct > float(offer['discount']) + 0.000001:
+                        raise ValidationError("El descuento ofrecido supera el máximo de Loyalty.")
+                    combined_offered = 100.0 - ((100.0 - base_discount) *
+                                                (100.0 - proposed_pct) / 100.0)
+                    offered_prices = self._quote_payment_tax_previews(
+                        partner, product, list_price, pricelist,
+                        fiscal_position, options, discount_percent=combined_offered)
+                    offer_data.update(offered_prices)
+                    offer_data['applied_discount_percent'] = proposed_pct
+                offers.append(offer_data)
             items.append({'product_id': pid, 'offers': offers})
+        for raw_pid, proposal in offered_discounts.items():
+            try:
+                pid = int(raw_pid)
+                reward_id = int(proposal['reward_id'])
+            except (ValueError, TypeError, KeyError):
+                raise ValidationError("Promoción propuesta inválida.")
+            if not any(item['product_id'] == pid and any(int(o['id']) == reward_id for o in item['offers']) for item in items):
+                raise ValidationError("La promoción ya no está disponible para el producto y bodega seleccionados.")
         return {'supported': True, 'items': items}
 
     @http.route("/catastro/app/quote/loyalty/rewards", type="json", auth="user", methods=["POST"])
@@ -1641,7 +1720,7 @@ class ConederaFieldAppController(http.Controller):
                 except (TypeError, ValueError):
                     raise ValidationError("La promoción elegida no es válida.")
         if hasattr(order, "catastro_pwa_apply_product_promotions"):
-            order.catastro_pwa_apply_product_promotions(selected_promos)
+            order.with_context(**self._quote_offered_promotion_context(lines, selected_promos)).catastro_pwa_apply_product_promotions(selected_promos)
         elif any(selected_promos.values()):
             raise ValidationError("El complemento Loyalty por producto no está instalado.")
         else:
@@ -1786,7 +1865,7 @@ class ConederaFieldAppController(http.Controller):
                 except (TypeError, ValueError):
                     raise ValidationError("La promoción elegida no es válida.")
         if hasattr(order, "catastro_pwa_apply_product_promotions"):
-            order.catastro_pwa_apply_product_promotions(selected_promos)
+            order.with_context(**self._quote_offered_promotion_context(lines, selected_promos)).catastro_pwa_apply_product_promotions(selected_promos)
         elif any(selected_promos.values()):
             raise ValidationError("Instale el complemento Loyalty por producto.")
         else:
