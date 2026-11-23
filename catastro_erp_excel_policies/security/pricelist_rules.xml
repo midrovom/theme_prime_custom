@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- An unmarked pricelist is available as before. A marked pricelist is read-only
+         visible to explicitly assigned employees.  Do not create global rules
+         or alter write/create/unlink ACLs of the native Odoo models. -->
+    <record id="rule_erp_pricelist_per_user" model="ir.rule">
+        <field name="name">ERP: listas restringidas por usuario (lectura)</field>
+        <field name="model_id" ref="product.model_product_pricelist"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="domain_force">['|', ('catastro_access_restricted', '=', False), ('catastro_allowed_user_ids', 'in', [user.id])]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>
