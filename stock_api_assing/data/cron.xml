@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <data>
+    <data noupdate="1">
         <!-- Acualiza el stock, precio del producto segun la company valor 1 -->
         <record id="stock_api_assing_update_company1" model="ir.cron">
             <field name="name">stock_api_assing_update CN</field>

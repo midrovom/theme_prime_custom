@@ -1,95 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="sale_order_stock_api_assing_view_form" model="ir.ui.view">
-        <field name="name">sale.order.form.stock.api.assing.18</field>
+        <field name="name">sale.order.stock.api.assing.view.form</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
-        <field name="priority">30</field>
         <field name="arch" type="xml">
-            <xpath expr="//form" position="attributes">
-                <attribute name="class" add="o_form_view_custom_stock" separator=" "/>
+            <xpath expr="//header/field[@name='state']" position="before">
+                <button name="action_export_to_radis" string="Enviar a Radis" type="object" class="btn-primary" groups="stock_api_assing.group_quotes_restring" invisible="state != 'draft' or export_send == 'E'"/>
             </xpath>
-
-            <xpath expr="//header/button[@id='send_by_email_primary']" position="after">
-                <button name="action_export_to_radis" type="object" string="Enviar a Radis"
-                        class="btn-primary" groups="stock_api_assing.group_quotes_restring"
-                        invisible="state != 'draft' or export_send == 'E'"/>
-            </xpath>
-            <xpath expr="//header/button[@name='action_confirm'][1]" position="attributes">
-                <attribute name="groups">!stock_api_assing.group_quotes_restring</attribute>
-            </xpath>
-            <xpath expr="//header/button[@name='action_confirm'][2]" position="attributes">
-                <attribute name="groups">!stock_api_assing.group_quotes_restring</attribute>
-            </xpath>
-            <xpath expr="//header/button[@name='action_cancel']" position="attributes">
-                <attribute name="groups">!stock_api_assing.group_quotes_restring</attribute>
-            </xpath>
-            <xpath expr="//header/field[@name='state']" position="attributes">
-                <attribute name="statusbar_visible">draft,sent,async,sale</attribute>
-            </xpath>
-
+            <xpath expr="(//header/button[@name='action_confirm'])[1]" position="attributes"><attribute name="groups" add="!stock_api_assing.group_quotes_restring" separator=","/></xpath>
+            <xpath expr="(//header/button[@name='action_confirm'])[2]" position="attributes"><attribute name="groups" add="!stock_api_assing.group_quotes_restring" separator=","/></xpath>
+            <xpath expr="//header/button[@name='action_cancel']" position="attributes"><attribute name="groups" add="!stock_api_assing.group_quotes_restring" separator=","/></xpath>
+            <xpath expr="//header/field[@name='state']" position="attributes"><attribute name="statusbar_visible">draft,sent,async,sale</attribute></xpath>
             <xpath expr="//field[@name='payment_term_id']" position="after">
                 <field name="export_send" invisible="1"/>
-                <field name="export_send" readonly="1" groups="stock_api_assing.group_quotes_restring"/>
+                <field name="export_send" groups="stock_api_assing.group_quotes_restring"/>
             </xpath>
             <xpath expr="//group[@name='sale_header']" position="after">
-                <group name="sale_button_multi" string="Selección múltiple de productos">
-                    <button name="selection_multi" string="Seleccionar productos"
-                            type="object" class="btn-primary"
-                            invisible="not id or state not in ('draft', 'sent') or export_send == 'E'"/>
+                <group name="sale_button_multi" string="Opcion para añadir multiples productos en los pedidos">
+                    <field name="warehouse_id" options="{'no_create': True}" readonly="state not in ('draft','sent')"/>
+                    <button name="selection_multi" string="Seleccionar productos" type="object" class="btn-primary" context="{'warehouse_id': warehouse_id}"/>
                 </group>
             </xpath>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']" position="attributes">
-                <attribute name="readonly">state == 'cancel' or locked or export_send == 'E' or state == 'async'</attribute>
-            </xpath>
-
-            <!-- La vista de líneas en Odoo 18 usa list, no tree. -->
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/list/field[@name='price_unit']" position="before">
-                <field name="warehouse_id" readonly="1" optional="show" options="{'no_open': True, 'no_create': True}"/>
+            <xpath expr="//page[@name='order_lines']/field[@name='order_line']" position="attributes"><attribute name="readonly" add="export_send == 'E' or state == 'async'" separator=" or "/></xpath>
+            <xpath expr="//page[@name='order_lines']//list/field[@name='price_unit']" position="before">
+                <field name="warehouse_id" readonly="1" optional="show"/>
                 <field name="stock_quantity" readonly="1" optional="show"/>
-                <field name="readonly_price_unit" column_invisible="1"/>
+                <field name="readonly_price_unit" column_invisible="True"/>
                 <field name="negotiable_price" optional="show"/>
             </xpath>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/list/field[@name='price_unit']" position="attributes">
-                <attribute name="readonly">qty_invoiced &gt; 0 or readonly_price_unit</attribute>
+            <xpath expr="//page[@name='order_lines']//list/field[@name='price_unit']" position="attributes"><attribute name="readonly" add="readonly_price_unit" separator=" or "/></xpath>
+            <xpath expr="//page[@name='order_lines']//form//field[@name='price_unit']" position="before">
+                <field name="warehouse_id" readonly="1"/><field name="stock_quantity" readonly="1"/><field name="negotiable_price"/>
             </xpath>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/form//field[@name='price_unit']" position="before">
-                <field name="warehouse_id" readonly="1" options="{'no_create': True, 'no_open': True}"/>
-                <field name="stock_quantity" readonly="1"/>
-                <field name="negotiable_price"/>
-            </xpath>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/form//field[@name='price_unit']" position="attributes">
-                <attribute name="readonly">1</attribute>
-            </xpath>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/form//field[@name='tax_id']" position="attributes">
-                <attribute name="readonly">1</attribute>
-            </xpath>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/list/field[@name='product_template_id']" position="attributes">
-                <attribute name="optional">hide</attribute>
-            </xpath>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/list" position="attributes">
-                <attribute name="create">0</attribute>
-            </xpath>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/list/control" position="replace"/>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/kanban" position="attributes">
-                <attribute name="create">0</attribute>
-            </xpath>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/kanban/control" position="replace"/>
-            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/kanban/templates/t[@t-name='card']//field[@name='price_unit']" position="after">
-                <div class="text-muted">Precio negociable: <field name="negotiable_price"/></div>
-                <div class="text-muted">Bodega: <field name="warehouse_id"/></div>
-                <div class="text-muted">Stock: <field name="stock_quantity"/></div>
+            <xpath expr="//page[@name='order_lines']//form//field[@name='price_unit']" position="attributes"><attribute name="readonly">True</attribute></xpath>
+            <xpath expr="//page[@name='order_lines']//form//field[@name='tax_id']" position="attributes"><attribute name="readonly">True</attribute></xpath>
+            <xpath expr="//page[@name='order_lines']//list" position="attributes"><attribute name="create">0</attribute></xpath>
+            <xpath expr="//page[@name='order_lines']//list/control" position="replace"/>
+            <xpath expr="//page[@name='order_lines']//kanban" position="attributes"><attribute name="create">0</attribute></xpath>
+            <xpath expr="//page[@name='order_lines']//kanban/control" position="replace"/>
+            <xpath expr="//page[@name='order_lines']//kanban/templates/t[@t-name='card']//main" position="inside">
+                <div class="text-muted" t-if="!record.display_type.raw_value">Precio negociable: <field name="negotiable_price"/> · Bodega: <field name="warehouse_id"/> · Stock: <field name="stock_quantity"/></div>
             </xpath>
             <xpath expr="//group[@name='sale_total']" position="after">
-                <group class="oe_subtotal_footer" colspan="2" name="sale_total_negotiable" string="Total negociable">
-                    <field name="tax_totals_negotiable" widget="account-tax-totals-field"
-                           nolabel="1" readonly="1"/>
-                    <field name="total_peso" readonly="1"/>
+                <group name="sale_total_negotible" string="Total negociable" class="oe_subtotal_footer" colspan="2">
+                    <field name="tax_totals_negotiable" widget="account-tax-totals-field" nolabel="1" readonly="1"/><field name="total_peso" readonly="1"/>
                 </group>
             </xpath>
-            <xpath expr="//field[@name='note']" position="attributes">
-                <attribute name="placeholder">Comentarios...</attribute>
-            </xpath>
+            <xpath expr="//field[@name='note']" position="attributes"><attribute name="placeholder">Comentarios...</attribute></xpath>
         </field>
     </record>
 </odoo>
