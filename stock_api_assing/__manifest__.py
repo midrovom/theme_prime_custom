@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 {
     'name': "stock_api_assing",
-    "version": "18.0.1.1.0",
+    "version": "18.0.2.0.2",
     'summary': """
-        update stock/ crea cotizaciones - Radiss""",
+        update stock/ crea cotizaciones - Radis""",
 
     'description': """
         1-actualiza y crea el stock desde radis (Update stock)
@@ -32,22 +32,12 @@
         'wizard/select_product.xml',
     ],
     'license': 'AGPL-3',
-    # 'assets': {
-    #     'web.assets_backend': [
-    #         'stock_api_assing/static/src/scss/style_tree.scss',
-    #         'stock_api_assing/static/src/js/tree_button.js',
-    #         # 'stock_api_assing/static/src/js/hide_add_line.js',
-    #         # 'stock_api_assing/static/src/views/*',
-    #         'stock_api_assing/static/src/views/**/*',
-    #         # 'stock_api_assing/static/src/views/form/form_controller.scss',
-    #     #    'button_near_create/static/src/js/kanban_button.js',
-    #     ],
-    #     'web.assets_qweb': [
-    #         'stock_api_assing/static/src/xml/tree_button.xml',
-    #         #'button_near_create/static/src/xml/kanban_button.xml',
-    #     ],
-    # },
-    
+    'assets': {
+        'web.assets_backend': [
+            'stock_api_assing/static/src/scss/style_tree.scss',
+            'stock_api_assing/static/src/views/form/form_controller.scss',
+        ],
+    },
     "installable": True,
     'auto_install': True,
     'application': True,

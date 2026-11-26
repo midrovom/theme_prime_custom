@@ -116,7 +116,7 @@ class StockAPISync(models.Model):
                         'name': name,
                         'default_code': codigo,
                         'list_price': price,
-                        'type': 'consu',
+                        'type': 'product',
                         'qty_available': stock,
                         'check_manage_sync': True,
                     })
@@ -165,7 +165,7 @@ class StockAPISync(models.Model):
                     'name': name,
                     'default_code': codigo,
                     'list_price': price if not api_data.price_list_id or api_data.price_list_id.name == 'Public Pricelist' else 0,
-                    'type': 'consu',
+                    'type': 'product',
                     'check_manage_sync': True,
                 })
 

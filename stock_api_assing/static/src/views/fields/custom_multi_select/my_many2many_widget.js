@@ -7,7 +7,7 @@ import { useActiveActions, useX2ManyCrud } from "@web/views/fields/relational_ut
 import { Many2XAutoCompleteCustom } from "@stock_api_assing/views/fields/relational_utils";
 import { registry } from "@web/core/registry";
 import { standardFieldProps } from "@web/views/fields/standard_field_props";
-import { Many2ManyTagsField } from "@web/views/fields/many2many_tags/many2many_tags_field";
+import { TagsList } from "@web/views/fields/many2many_tags/tags_list";
 import { usePopover } from "@web/core/popover/popover_hook";
 import { useService } from "@web/core/utils/hooks";
 
@@ -208,7 +208,7 @@ export class Many2ManyMultiField extends Component {
 
 Many2ManyMultiField.template = "web.Many2ManyMultiField";
 Many2ManyMultiField.components = {
-    Many2ManyTagsField,
+    TagsList,
     Many2XAutoCompleteCustom,
 };
 
