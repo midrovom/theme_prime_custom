@@ -47,16 +47,11 @@ def dispatch_timeliness(rows, include_ids=False):
         if days:
             late[cohort].append((days, deadline, end, row))
 
-    def external_label(row):
-        number = row.get("delay_external_number", row.get("external_number"))
-        return "FA/" + (str(number).strip() if number is not None and number is not False and str(number).strip() else "SIN NÚMERO EXTERNO")
-
     def delay_summary(items):
         ordered = nsmallest(10, items, key=lambda item: (-item[0], item[1], str(item[3].get("name") or ""), item[3]["id"]))
         return {"count": len(items), "avg_days": sum(item[0] for item in items) / len(items) if items else None,
             "max_days": max((item[0] for item in items), default=None), "available": bool(items),
             "top": [{"id": row["id"], "name": row.get("name") or str(row["id"]),
-                "external_label": external_label(row),
                 "customer": row.get("customer") or "Sin cliente", "city": row.get("city") or "Sin ciudad",
                 "deadline": deadline.isoformat(), "reference_date": end.isoformat(), "delay_days": days}
                 for days, deadline, end, row in ordered]}

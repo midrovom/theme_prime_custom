@@ -24,23 +24,12 @@ class InvoiceModel:
         def matches(row, term):
             key, op, value = term
             actual = row.get(key)
-            if key == "line_ids.last_dispatch_date":
-                return any(d >= value for d in (row.get("line_dispatch_dates") or []) if d)
             if key=="warehouse_ids": return any(identity in value for identity in (actual or []))
             if isinstance(actual, list): actual = actual[0]
-            if op in (">=", "<=", ">") and not actual: return False
             return {"=":lambda:actual == value,"in":lambda:actual in value,
                     ">=":lambda:actual >= value,"<=":lambda:actual <= value,
                     ">":lambda:actual > value}[op]()
-        def match_domain(row):
-            terms = iter(domain)
-            def one(term):
-                if term == "|":
-                    left, right = one(next(terms)), one(next(terms))
-                    return left or right
-                return matches(row, term)
-            return all(one(term) for term in terms)
-        return [row for row in self.rows if match_domain(row)]
+        return [row for row in self.rows if all(matches(row,term) for term in domain)]
     def search_count(self, domain): return len(self.matching(domain))
     def search_read(self, domain, fields, **kwargs):
         return [{"id":r["id"], **{key:r.get(key) for key in fields}} for r in self.matching(domain)]
