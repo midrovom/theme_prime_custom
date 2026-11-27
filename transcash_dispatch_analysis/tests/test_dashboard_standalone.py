@@ -128,6 +128,7 @@ class DashboardTests(unittest.TestCase):
 
     def test_multiple_warehouses_scope_weights_and_fleet_to_selected_detail(self):
         for row in self.rows:
+            row["external_number"]="000"+str(row["id"])
             row["warehouse_ids"]=[10,20]
             row["snapshot_id"]=[1,"Cut"]
             row["invoice_key"]='["FA","%s"]'%row["id"]
@@ -142,6 +143,7 @@ class DashboardTests(unittest.TestCase):
         snapshot=SimpleNamespace(id=1,policy_pack={"rules":[{"city_key":"GUAYAQUIL","delivery_key":"","max_days":3,"day_type":"calendar"}]})
         self.service.env.models["dispatch.snapshot"].browse=lambda ids:[snapshot]
         result=self.service.get_data({"warehouse_ids":[10]})
+        self.assertEqual(result["timeliness"]["delays"]["pending"]["top"][0]["external_label"], "FAC/0002")
         self.assertEqual(result["stats"]["pending_tons"],9)
         self.assertEqual(result["transport"]["pending_tons"],9)
         self.assertEqual(result["stats"]["pending"],1)

@@ -5,7 +5,7 @@ import json
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools.safe_eval import safe_eval
-from ..services.engine import aggregate_invoice, as_date, evaluate, grouped, invoice_display_name, summarize, METRICS, GROUPS
+from ..services.engine import aggregate_invoice, as_date, evaluate, grouped, invoice_display_name, external_invoice_number, summarize, METRICS, GROUPS
 from ..services.planning import build_transport_plan
 from ..services.overview import pending_by_agreement, dispatch_progress, pending_plan_reconciliation
 from ..services.timeliness import dispatch_timeliness
@@ -131,6 +131,8 @@ class DispatchDashboard(models.AbstractModel):
             raise UserError(_("Seleccione una fuente o un período con menos de 200.000 facturas para el tablero. Las vistas dinámicas siguen disponibles."))
         rows = invoices.search_read(domain, READ_FIELDS)
         for row in rows:
+            # Preserve the header reference even when warehouse scoping rebuilds the summary.
+            row["delay_external_number"] = external_invoice_number(row["external_number"])
             row["name"] = invoice_display_name({"Factura": row["external_number"],
                 "TipoFactura": row["invoice_type"], "NumeroFactura": row["internal_number"]})
             if not row.pop("lead_available"):

@@ -28,6 +28,23 @@ class TimelinessTests(unittest.TestCase):
         self.assertEqual(result["delays"]["pending"]["max_days"], 11)
         self.assertEqual(result["detail_ids"], {"timely_completed": [1], "late_completed": [2], "overdue_pending": [3]})
 
+    def test_delay_external_label_is_explicit_in_both_tabs(self):
+        result = dispatch_timeliness([
+            row(3519, "2026-01-06", external_number="000123", internal_number="3519"),
+            row(3527, None, external_number="fac/ 000456", internal_number="3527"),
+        ])
+        self.assertEqual(result["delays"]["completed"]["top"][0]["external_label"], "FAC/000123")
+        self.assertEqual(result["delays"]["pending"]["top"][0]["external_label"], "FAC/000456")
+        self.assertEqual(result["delays"]["completed"]["top"][0]["id"], 3519)
+
+    def test_delay_header_reference_survives_scoping_and_missing_external(self):
+        result = dispatch_timeliness([
+            row(1, None, external_number="WRONG", delay_external_number="0007"),
+            row(2, "2026-01-06", external_number="WRONG", delay_external_number=""),
+        ])
+        self.assertEqual(result["delays"]["pending"]["top"][0]["external_label"], "FAC/0007")
+        self.assertEqual(result["delays"]["completed"]["top"][0]["external_label"], "FAC/SIN NÚMERO EXTERNO")
+
     def test_completion_on_deadline_is_timely(self):
         self.assertEqual(dispatch_timeliness([row()])["pie"]["series"][0]["pct"], 100)
 
