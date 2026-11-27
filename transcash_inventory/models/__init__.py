@@ -10,3 +10,4 @@ from . import ai_request
 from . import facts
 
 from . import api_sync_wizard
+from . import saved_filter

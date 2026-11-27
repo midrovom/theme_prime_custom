@@ -212,6 +212,86 @@ class TranscashDashboardController(http.Controller):
         return request.make_response(source, headers=[('Content-Type', 'text/html; charset=utf-8'),
             ('Cache-Control', 'no-store, no-cache, must-revalidate'), ('Pragma', 'no-cache'), ('X-Content-Type-Options', 'nosniff')])
 
+    # Favoritos del tablero: equivalentes a Guardar filtro / Compartir / Predeterminado.
+    # Se almacenan en Odoo (no en el navegador) y se aíslan por usuario/empresa.
+    @http.route('/transcash_inventory/filters', type='http', auth='user', methods=['GET'])
+    def inventory_saved_filters(self, **kw):
+        if not self._can_view():
+            return self._json({'error': 'Sin permisos.'}, 403)
+        model = request.env['transcash.inventory.saved.filter'].sudo()
+        records = model.search([
+            ('company_id', '=', request.env.company.id),
+            '|', ('user_id', '=', request.env.user.id), ('is_shared', '=', True),
+        ], order='is_default desc, name asc, id asc')
+        items = []
+        for row in records:
+            try:
+                criteria = json.loads(row.filter_json)
+            except (ValueError, TypeError):
+                criteria = {}
+            items.append({
+                'id': row.id, 'name': row.name, 'filters': criteria,
+                'is_default': bool(row.is_default and row.user_id.id == request.env.user.id),
+                'is_shared': bool(row.is_shared),
+                'is_owner': row.user_id.id == request.env.user.id,
+            })
+        return self._json({'ok': True, 'items': items})
+
+    @http.route('/transcash_inventory/filters/save', type='http', auth='user', methods=['POST'], csrf=True)
+    def inventory_saved_filter_save(self, **kw):
+        if not self._can_view():
+            return self._json({'error': 'Sin permisos.'}, 403)
+        name = str(kw.get('name') or '').strip()
+        raw = str(kw.get('filters') or '')
+        if not name or len(name) > 100:
+            return self._json({'error': 'Indique un nombre de 1 a 100 caracteres.'}, 400)
+        if not raw or len(raw) > 12000:
+            return self._json({'error': 'El tamaño del filtro no es válido.'}, 400)
+        try:
+            criteria = json.loads(raw)
+        except (TypeError, ValueError):
+            return self._json({'error': 'Los criterios de filtro no son JSON válido.'}, 400)
+        if not isinstance(criteria, dict) or criteria.get('version') != 1:
+            return self._json({'error': 'Versión de filtro incompatible.'}, 400)
+        warehouses = criteria.get('warehouses', [])
+        if (not isinstance(warehouses, list) or len(warehouses) > 500 or
+                any(not isinstance(s, str) or len(s) > 255 for s in warehouses)):
+            return self._json({'error': 'La selección de bodegas no es válida.'}, 400)
+        model = request.env['transcash.inventory.saved.filter'].sudo()
+        owner = [('company_id', '=', request.env.company.id),
+                 ('user_id', '=', request.env.user.id)]
+        existing = model.search(owner + [('name', '=', name)], limit=1)
+        is_default = str(kw.get('is_default') or '') in ('1', 'true', 'True')
+        is_shared = str(kw.get('is_shared') or '') in ('1', 'true', 'True')
+        if is_default:
+            model.search(owner + [('is_default', '=', True)]).write({'is_default': False})
+        values = {'name': name, 'filter_json': json.dumps(criteria, ensure_ascii=False),
+                  'is_default': is_default, 'is_shared': is_shared}
+        if existing:
+            existing.write(values)
+            saved = existing
+        else:
+            values.update({'user_id': request.env.user.id, 'company_id': request.env.company.id})
+            saved = model.create(values)
+        return self._json({'ok': True, 'id': saved.id})
+
+    @http.route('/transcash_inventory/filters/delete', type='http', auth='user', methods=['POST'], csrf=True)
+    def inventory_saved_filter_delete(self, **kw):
+        if not self._can_view():
+            return self._json({'error': 'Sin permisos.'}, 403)
+        try:
+            record_id = int(kw.get('id') or 0)
+        except (TypeError, ValueError):
+            return self._json({'error': 'Identificador incorrecto.'}, 400)
+        record = request.env['transcash.inventory.saved.filter'].sudo().search([
+            ('id', '=', record_id), ('company_id', '=', request.env.company.id),
+            ('user_id', '=', request.env.user.id),
+        ], limit=1)
+        if not record:
+            return self._json({'error': 'El filtro no existe o no le pertenece.'}, 404)
+        record.unlink()
+        return self._json({'ok': True})
+
     @http.route('/transcash_inventory/data', type='http', auth='user', methods=['GET'])
     def current_data(self, **kw):
         if not self._can_view():

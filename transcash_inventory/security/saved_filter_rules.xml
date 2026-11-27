@@ -1,0 +1,22 @@
+<odoo>
+    <!-- Empresa activa; lectura de favoritos propios o compartidos. -->
+    <record id="rule_saved_filter_company_visibility" model="ir.rule">
+        <field name="name">Inventario: favoritos visibles de mi empresa</field>
+        <field name="model_id" ref="model_transcash_inventory_saved_filter"/>
+        <field name="domain_force">[('company_id', 'in', company_ids), '|', ('user_id', '=', user.id), ('is_shared', '=', True)]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <!-- Un favorito compartido sólo puede ser modificado o eliminado por su propietario. -->
+    <record id="rule_saved_filter_owner_write" model="ir.rule">
+        <field name="name">Inventario: cada usuario edita sus favoritos</field>
+        <field name="model_id" ref="model_transcash_inventory_saved_filter"/>
+        <field name="domain_force">[('user_id', '=', user.id), ('company_id', 'in', company_ids)]</field>
+        <field name="perm_read" eval="False"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+</odoo>

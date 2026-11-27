@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es"><head><script src="/transcash_inventory/static/src/company_scope_v128.js?v=18.0.1.28.0"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light"><meta name="transcash-dashboard-version" content="18.0.1.50.0"><title>TRANSCASH | Inteligencia de Inventario</title>
+<html lang="es"><head><script src="/transcash_inventory/static/src/company_scope_v128.js?v=18.0.1.28.0"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light"><meta name="transcash-dashboard-version" content="18.0.1.54.0"><title>TRANSCASH | Inteligencia de Inventario</title>
 <meta name="transcash-csrf" content="@@CSRF@@"/><meta name="transcash-company-id" content="@@COMPANY_ID@@"/>
 <meta name="transcash-can-upload" content="@@CAN_UPLOAD@@"/>
 <meta name="transcash-can-photo-queue" content="@@CAN_PHOTO_QUEUE@@"/>
 <meta name="transcash-can-ai" content="@@CAN_AI@@"/>
 <meta name="transcash-can-sync" content="@@CAN_SYNC@@"/>
-<link rel="stylesheet" href="/transcash_inventory/static/src/dashboard_v149.css"/></head><body class="tc-awaiting-data">
+<link rel="stylesheet" href="/transcash_inventory/static/src/dashboard_v154.css"/></head><body class="tc-awaiting-data">
 <div id="app"><aside class="sidebar" id="tcSidebar" aria-label="Secciones del inventario"><button id="tcMobileMenuClose" class="tc-mobile-menu-close" type="button" aria-label="Cerrar menú">✕ <span>Cerrar</span></button><div class="brand"><div class="brandmark"><i></i>TRANSCASH</div><div class="brandsub">Inventory intelligence</div></div><div class="navlabel">INTELIGENCIA COMERCIAL</div><nav class="nav" id="nav"><button class="active" data-page="resumen"><span class="nav-ico">◈</span><span class="navname">Resumen ejecutivo</span></button><button data-page="abc"><span class="nav-ico">◫</span><span class="navname">ABC y rentabilidad</span></button><button data-page="xyz"><span class="nav-ico">▩</span><span class="navname">Análisis ABC × XYZ</span></button><button data-page="rotacion"><span class="nav-ico">↻</span><span class="navname">Cobertura y riesgo</span></button><button data-page="comprasplan"><span class="nav-ico">⊞</span><span class="navname">Simulador de reposición</span></button><button data-page="bodegas"><span class="nav-ico">▦</span><span class="navname">Stock y bodegas</span></button><button data-page="proveedores"><span class="nav-ico">⛟</span><span class="navname">Compras y proveedores</span></button><button data-page="productos"><span class="nav-ico">▤</span><span class="navname">Explorador de productos</span></button><button data-page="provprofit"><span class="nav-ico">◈</span><span class="navname">Rentabilidad por proveedor</span></button><button data-page="asistente" id="navAI" hidden><span class="nav-ico">✧</span><span class="navname">Consultar con ChatGPT</span></button><button data-page="calidad"><span class="nav-ico">⚑</span><span class="navname">Calidad y metodología</span></button></nav><div class="sidebarfoot"><div class="sidebox"><strong>Datos locales y privados</strong>Datos importados y almacenados de forma privada en Odoo. Acceso según permisos de usuario.</div><div class="version">TRANSCASH • ODOO 18</div></div></aside>
 <div id="tcMobileBackdrop" class="tc-mobile-backdrop" aria-hidden="true"></div>
 <div class="main"><header class="topbar"><div><div class="eyebrow">CENTRO DE CONTROL • ABASTECIMIENTO</div><h1 class="headtitle" id="pageTitle">Panorama del inventario</h1><div class="subhead"><b>Empresa activa: @@COMPANY@@</b> · Análisis operativo y financiero con datos propios de la compañía</div></div><div class="top-actions"><button class="btn" id="resetBtn">↶ Restablecer filtros</button><button class="btn" id="helpBtn">ⓘ Metodología</button><button class="btn" id="apiSyncBtn" type="button" hidden>↻ Sincronizar API</button><button class="btn primary" id="exportBtn">↓ Exportar CSV filtrado</button></div></header>
@@ -16,14 +16,44 @@
  <p id="tcStatusText">Consultando la última versión de inventario de la empresa seleccionada.</p>
 </div>
 <div class="filterbox tc-unified-filters" id="globalProductFilters" aria-label="Filtros generales del inventario">
- <div class="tc-unified-head"><div><strong>Filtros de análisis</strong><span>Los indicadores se actualizan automáticamente en la pantalla actual.</span></div><button type="button" id="tcMobileFilterToggle" class="tc-mobile-filter-toggle" aria-controls="globalProductFilters" aria-expanded="false">⚙ Ajustar filtros</button><button type="button" id="expClearAll" class="tc-filter-reset">Limpiar marca, proveedor y formato</button></div>
+ <div class="tc-unified-head tc-view-toolbar">
+  <div class="tc-favorite-select-wrap"><select id="tcFavoriteSelect" aria-label="Seleccionar favorito"><option value="">Seleccionar favorito</option></select></div>
+  <button type="button" id="tcMobileFilterToggle" aria-controls="globalProductFilters" aria-expanded="true">Más filtros</button>
+  <button type="button" id="tcFavoriteApply">Aplicar</button>
+  <div class="tc-favorites">
+   <button type="button" id="tcFavoritesBtn" class="tc-favorites-trigger" aria-expanded="false" aria-controls="tcFavoritesMenu">▼ Opciones</button>
+   <div id="tcFavoritesMenu" class="tc-favorites-menu" hidden>
+    <div class="tc-view-periods"><button type="button" data-favorite-period="3">Últimos 3 meses</button><button type="button" data-favorite-period="all">Todas las fechas</button></div>
+    <div class="tc-favorite-save"><strong>Guardar vista como</strong>
+     <form id="tcFavoriteForm"><input id="tcFavoriteName" maxlength="100" placeholder="Nombre de la vista" aria-label="Nombre de la vista" required/>
+      <button type="submit" id="tcFavoriteSaveBtn">Guardar en Favoritos</button>
+      <label><input id="tcFavoriteDefault" type="checkbox"/> Usar por defecto al abrir</label>
+      <label><input id="tcFavoriteShared" type="checkbox"/> Compartir con usuarios de esta empresa</label></form>
+     <p class="tc-view-note">Las vistas conservan las bodegas, los filtros, el período y la sección seleccionada.</p>
+    </div>
+    <strong>Administrar favoritos</strong><div id="tcFavoritesList" class="tc-favorites-list"></div>
+   </div>
+  </div>
+  <button type="button" id="expClearAll" class="tc-filter-reset">Limpiar marca, proveedor y formato</button>
+ </div>
+ <div id="tcFavoriteStatus" role="status" aria-live="polite"></div>
  <div class="tc-unified-grid">
   <div class="ctrl tc-period"><label for="period">Período de ventas y compras</label><select id="period"><option value="12" selected>Últimos 12 meses cerrados</option><option value="6">Últimos 6 meses cerrados</option><option value="3">Últimos 3 meses cerrados</option><option value="26">Año actual</option><option value="25">Año anterior comparable</option><option value="all">Todo el histórico</option><option value="custom">Personalizado</option></select></div>
   <div class="ctrl tc-cat"><label for="cat">Categoría</label><select id="cat"></select></div>
   <div class="tc-inline-combo tc-brand"><div class="tc-explorer-combo" data-explorer-combo="brand"><label for="expBrandInput">Marca</label><div class="tc-combo-control"><input id="expBrandInput" type="search" placeholder="Escribe una marca..." autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="expBrandOptions"/><button type="button" class="tc-combo-arrow" aria-label="Mostrar marcas" data-combo-open="brand">▾</button></div><div id="expBrandOptions" class="tc-combo-options" role="listbox" hidden></div></div></div>
   <div class="tc-inline-combo tc-format"><div class="tc-explorer-combo" data-explorer-combo="format"><label for="expFormatInput">Formato</label><div class="tc-combo-control"><input id="expFormatInput" type="search" placeholder="Ej.: 45×45, 60×120..." autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="expFormatOptions"/><button type="button" class="tc-combo-arrow" aria-label="Mostrar formatos" data-combo-open="format">▾</button></div><div id="expFormatOptions" class="tc-combo-options" role="listbox" hidden></div></div></div>
   <div class="tc-inline-combo tc-provider"><div class="tc-explorer-combo" data-explorer-combo="provider"><label for="expProviderInput">Proveedor del catálogo</label><div class="tc-combo-control"><input id="expProviderInput" type="search" placeholder="Escribe un proveedor..." autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="expProviderOptions"/><button type="button" class="tc-combo-arrow" aria-label="Mostrar proveedores" data-combo-open="provider">▾</button></div><div id="expProviderOptions" class="tc-combo-options" role="listbox" hidden></div></div></div>
-  <div class="ctrl tc-warehouse"><label for="wh">Bodega · stock</label><select id="wh"></select></div>
+  <div class="ctrl tc-warehouse"><label for="wh">Bodega · stock</label>
+   <div class="tc-warehouse-picker">
+    <button type="button" id="wh" class="tc-warehouse-trigger" aria-expanded="false" aria-controls="whPanel" title="Seleccionar una o varias bodegas"><span aria-hidden="true">▾</span><span class="tc-warehouse-title">Todas las bodegas</span></button>
+    <div id="whPanel" class="tc-warehouse-panel" hidden>
+      <input id="whSearch" type="search" placeholder="Buscar bodega..." aria-label="Buscar bodega" autocomplete="off"/>
+      <div class="tc-warehouse-actions"><button type="button" id="whAll">Todas</button><span id="whCount">Sin restricción</span></div>
+      <div id="whOptions" class="tc-warehouse-options" role="group" aria-label="Seleccionar bodegas"></div>
+      <div class="tc-warehouse-foot"><span>Las existencias se suman únicamente de las bodegas marcadas.</span><button type="button" id="whClose">Cerrar</button></div>
+    </div>
+   </div>
+  </div>
   <div class="ctrl tc-search"><label for="search">Buscar producto / SKU</label><input type="search" id="search" placeholder="Código o descripción..."></div>
   <div class="ctrl tc-date" id="fromWrap" hidden><label for="from">Desde</label><select id="from" disabled></select></div>
   <div class="ctrl tc-date" id="toWrap" hidden><label for="to">Hasta</label><select id="to" disabled></select></div>
@@ -103,5 +133,5 @@
 </nav>
 <div class="detailback" id="detailBack"></div><aside class="drawer" id="drawer" aria-label="Detalle de producto"><button class="drawerclose" id="drawerClose">✕ Cerrar</button><div id="drawerContent"></div></aside>
 
-<script defer src="/transcash_inventory/static/src/dashboard_v150.js?v=18.0.1.50.0"></script>
+<script defer src="/transcash_inventory/static/src/dashboard_v154.js?v=18.0.1.54.0"></script>
 </body></html>
