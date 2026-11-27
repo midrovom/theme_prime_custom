@@ -388,6 +388,13 @@ class TestDispatchIntegration(TransactionCase):
         self.assertEqual(stored.user_id,self.env.user)
         self.assertEqual(stored.model_id,"dispatch.invoice.line")
         self.assertIn(favorite["id"],[row["id"] for row in service.get_saved_filters()])
+        # The last applied favorite, dates and multiple warehouses survive a new entry.
+        active_filters={**filters, "warehouse_ids":warehouses.ids,
+                        "date_from":"2026-01-01", "date_to":"2026-11-27"}
+        service.save_active_filter_state(active_filters, favorite_id=favorite["id"])
+        restored=service.get_active_filter_state()
+        self.assertEqual(restored["filters"], active_filters)
+        self.assertEqual(restored["favorite_id"], favorite["id"])
 
     def test_existing_import_backfill_and_database_audit(self):
         snapshot=self._snapshot("legacy-backfill");snapshot._prepare();snapshot._load_next()

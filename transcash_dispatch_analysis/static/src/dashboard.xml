@@ -16,7 +16,7 @@
           <details class="td-view-options"><summary>Opciones</summary><div>
             <div class="td-actions"><button class="td-button" t-on-click="recentDates">Últimos 30 días</button><button class="td-button" t-on-click="allDates">Todas las fechas</button></div>
             <label>Guardar vista como<input t-model="state.favoriteName" placeholder="Nombre de la vista"/></label><button class="td-button" t-on-click="saveFavorite">Guardar en Favoritos</button>
-            <p>Las vistas conservan las fechas que tienes seleccionadas.</p>
+            <p>Al volver al tablero se restauran los últimos filtros aplicados. Al elegir un favorito se conservan las fechas actuales.</p>
             <button class="td-button" t-on-click="() => this.openAnalysis(true)">Análisis nativo por bodegas</button>
             <button t-if="state.data.can_configure" class="td-button" t-on-click="validateRecords" t-att-disabled="state.auditBusy" t-esc="state.auditBusy ? 'Validando…' : 'Validar / consolidar duplicados'"/>
           </div></details>
@@ -62,6 +62,59 @@
             <p t-else="" class="td-delay-empty" t-esc="state.delayBasis === 'completed' ? 'No hay despachos completados con retraso medible en estos filtros.' : 'No hay pendientes vencidos evaluables en estos filtros.'"/>
             <div class="td-delay-footer"><span t-esc="state.delayBasis === 'completed' ? 'Promedio solo de los despachados demorados.' : 'Atraso de los pendientes a la fecha de cada corte.'"/><button t-if="delaySummary.top.length > 5" class="td-link" t-on-click="() => state.allDelays = !state.allDelays" t-att-aria-expanded="state.allDelays ? 'true' : 'false'" t-esc="state.allDelays ? 'Mostrar 5' : 'Mostrar hasta 10'"/></div>
           </section>
+        </div>
+        <div class="td-monthly-section" t-if="state.data.monthly">
+          <div class="td-section-header"><div><h2>Estadísticas mensuales · <t t-esc="state.data.monthly.year"/></h2><p>Enero a diciembre · Año de la fecha Hasta (o Desde si no hay Hasta; sin fechas, año del corte seleccionado o actual); mismos filtros de fuente, corte, ciudad, modalidad y bodegas.</p></div></div>
+          <div t-if="!state.data.monthly.available" class="td-panel td-alert warning" t-esc="state.data.monthly.reason"/>
+          <t t-else="">
+            <section class="td-panel td-wide td-monthly-panel">
+              <div class="td-section-header"><div><h3>Despachos realizados y % de retraso</h3><p>Por fecha de despacho completo · Una factura por despacho</p></div><div class="td-monthly-total"><span>Despachos del año</span><strong t-esc="format(state.data.monthly.completed_total)"/></div></div>
+              <div class="td-monthly-legend"><span><i class="td-monthly-blue"/>Despachos realizados</span><span><i class="td-monthly-red"/>% de retraso</span></div>
+              <div class="td-monthly-scroll">
+                <svg viewBox="0 0 930 278" class="td-monthly-svg" role="img" aria-label="Despachos completos y porcentaje de retraso por mes">
+                  <g t-foreach="monthlyAxis('completed').ticks" t-as="tick" t-key="tick.value">
+                    <line x1="48" x2="875" t-att-y1="tick.y" t-att-y2="tick.y" class="td-monthly-gridline"/>
+                    <text x="42" t-att-y="tick.y + 4" text-anchor="end" class="td-monthly-axis" t-esc="format(tick.value)"/>
+                    <text x="883" t-att-y="tick.y + 4" class="td-monthly-axis td-monthly-percent" t-esc="tick_index * 25 + '%'"/>
+                  </g>
+                  <g t-foreach="monthlyPoints()" t-as="point" t-key="point.month">
+                    <title t-esc="monthlyTooltip(point)"/>
+                    <rect t-att-x="point.x - 20" t-att-y="point.y" width="40" t-att-height="point.height" rx="3" class="td-monthly-blue"/>
+                    <text t-att-x="point.x" t-att-y="point.y - 6" text-anchor="middle" class="td-monthly-count" t-esc="format(point.completed)"/>
+                    <text t-att-x="point.x" y="250" text-anchor="middle" class="td-monthly-axis" t-esc="point.label"/>
+                  </g>
+                  <polyline t-foreach="monthlyDelaySegments()" t-as="segment" t-key="segment_index" t-att-points="segment" fill="none" class="td-monthly-line" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <g t-foreach="monthlyPoints().filter(p => p.lateY !== null)" t-as="point" t-key="point.month">
+                    <title t-esc="monthlyTooltip(point)"/>
+                    <circle t-att-cx="point.x" t-att-cy="point.lateY" r="4" class="td-monthly-red" stroke="white" stroke-width="1.5"/>
+                    <text t-att-x="point.x" t-att-y="point.lateLabelY" text-anchor="middle" class="td-monthly-percent td-monthly-value" t-esc="format(point.late_pct, 1) + '%'"/>
+                  </g>
+                </svg>
+              </div>
+              <p class="td-chart-note">% de retraso = despachos demorados / despachos completos evaluables × 100. Sin plazo o datos no evaluables: cuentan en cantidad cuando la fecha es válida, pero no en el porcentaje. Sin medición: la línea se interrumpe.</p>
+            </section>
+            <section class="td-panel td-wide td-monthly-panel">
+              <div class="td-section-header"><div><h3>Despachos pendientes acumulados</h3><p>Por mes de facturación · Pendientes al corte seleccionado</p></div><div class="td-monthly-total"><span>Pendientes del año</span><strong t-esc="format(state.data.monthly.pending_total)"/></div></div>
+              <div class="td-monthly-legend"><span><i class="td-monthly-carry"/>Pendientes de meses anteriores</span><span><i class="td-monthly-amber"/>Pendientes del mes</span></div>
+              <div class="td-monthly-scroll">
+                <svg viewBox="0 0 930 278" class="td-monthly-svg" role="img" aria-label="Despachos pendientes del mes y acumulados de enero a diciembre">
+                  <g t-foreach="monthlyAxis('pending_accumulated').ticks" t-as="tick" t-key="tick.value">
+                    <line x1="48" x2="875" t-att-y1="tick.y" t-att-y2="tick.y" class="td-monthly-gridline"/>
+                    <text x="42" t-att-y="tick.y + 4" text-anchor="end" class="td-monthly-axis" t-esc="format(tick.value)"/>
+                  </g>
+                  <g t-foreach="monthlyPoints(true)" t-as="point" t-key="point.month">
+                    <title t-esc="monthlyTooltip(point, true)"/>
+                    <rect t-att-x="point.x - 20" t-att-y="point.y + point.newHeight" width="40" t-att-height="Math.max(0, point.height - point.newHeight)" class="td-monthly-carry"/>
+                    <rect t-att-x="point.x - 20" t-att-y="point.y" width="40" t-att-height="point.newHeight" class="td-monthly-amber"/>
+                    <text t-att-x="point.x" t-att-y="point.y - 7" text-anchor="middle" class="td-monthly-count" t-esc="format(point.pending_accumulated)"/>
+                    <text t-att-x="point.x" y="250" text-anchor="middle" class="td-monthly-axis" t-esc="point.label"/>
+                    <text t-att-x="point.x" y="267" text-anchor="middle" class="td-monthly-new" t-esc="'+' + format(point.pending)"/>
+                  </g>
+                </svg>
+              </div>
+              <p class="td-chart-note">Acumulado = pendientes anteriores del mismo año + pendientes del mes. Si una factura se completa, deja de formar parte del acumulado al actualizar el corte. No representa saldos históricos al cierre de cada mes ni incluye pendientes facturados en años anteriores.</p>
+            </section>
+          </t>
         </div>
         <section class="td-panel td-wide td-agreements">
           <div class="td-section-header"><div><h3>Pendientes por plazo de entrega</h3><p class="td-muted">Mismos filtros de las tarjetas. Acuerdos desde la factura; estado al corte.</p></div><div class="td-due-chips"><span>Vencen hoy: <b t-esc="format(state.data.agreements.due.due_today)"/> facturas</span><span>Próximos 3 días: <b t-esc="format(state.data.agreements.due.next_3_days)"/> facturas</span></div></div>

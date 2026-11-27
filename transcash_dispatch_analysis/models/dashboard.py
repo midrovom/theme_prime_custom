@@ -1,6 +1,6 @@
 from collections import Counter
 from collections import defaultdict
-from datetime import timedelta
+from datetime import date, timedelta
 import json
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
@@ -9,6 +9,7 @@ from ..services.engine import aggregate_invoice, as_date, evaluate, grouped, sum
 from ..services.planning import build_transport_plan
 from ..services.overview import pending_by_agreement, dispatch_progress, pending_plan_reconciliation
 from ..services.timeliness import dispatch_timeliness
+from ..services.monthly import monthly_dispatch
 
 READ_FIELDS = ["name", "invoice_key", "snapshot_id", "source_id", "company_id", "external_number", "internal_number", "invoice_date", "customer", "city", "delivery", "warehouse", "seller",
     "state", "pending", "pending_lines", "pending_weight", "pending_boxes", "pending_pallets", "has_adjustment", "physically_completed", "source_warnings", "source_grain",
@@ -69,6 +70,59 @@ class DispatchDashboard(models.AbstractModel):
         return domain
 
     @api.model
+    def _scope_warehouse_rows(self, rows, transport_lines):
+        if not rows:
+            return []
+        line_groups = defaultdict(list)
+        for line in transport_lines:
+            if line.get("raw_data"): line_groups[line["invoice_id"][0]].append(line["raw_data"])
+        snapshots_for_scope = self.env["dispatch.snapshot"].browse(sorted({r["snapshot_id"][0] for r in rows}))
+        packs_for_scope = {snapshot.id:snapshot.policy_pack or {} for snapshot in snapshots_for_scope}
+        scoped = []
+        for row in rows:
+            if row["id"] not in line_groups: continue
+            summary = aggregate_invoice(row["invoice_key"],line_groups[row["id"]],row["cutoff_date"])
+            scoped.append({**row,**evaluate(summary,packs_for_scope.get(row["snapshot_id"][0],{}))})
+        return scoped
+
+    @api.model
+    def _annual_statistics(self, filters):
+        # The yearly charts have their own explicitly labelled date scope; other
+        # filters and the selected snapshot are identical to the dashboard.
+        anchor = as_date(filters.get("date_to") or filters.get("date_from"))
+        if not anchor and filters.get("snapshot_id"):
+            # _domain in get_data has already validated the selected cut.
+            anchor = self.env["dispatch.snapshot"].browse(int(filters["snapshot_id"])).cutoff_date
+        year = (anchor or fields.Date.context_today(self)).year
+        start, end = date(year, 1, 1).isoformat(), date(year, 12, 31).isoformat()
+        base = {key: value for key, value in filters.items() if key not in ("date_from", "date_to")}
+        domain = self._domain({**base, "date_to": end})
+        warehouse_ids = base.get("warehouse_ids") or []
+        # Earlier invoices may complete this year. With a warehouse selection,
+        # the scoped completion date may differ from the full invoice's date.
+        completion_field = "line_ids.last_dispatch_date" if warehouse_ids else "completion_date"
+        domain += ["|", ("invoice_date", ">=", start), (completion_field, ">=", start)]
+        invoices = self.env["dispatch.invoice"]
+        if invoices.search_count(domain) > 200_000:
+            return {"year": year, "available": False, "months": [],
+                    "reason": "El análisis anual supera 200.000 facturas. Selecciona una fuente o bodega para reducir el alcance."}
+        annual_fields = ["name", "invoice_date", "completion_date", "cutoff_date", "pending",
+                         "physically_completed", "eligible", "sla_configured", "quality_issue",
+                         "has_adjustment", "sla_status", "deadline", "customer", "city"]
+        if warehouse_ids:
+            annual_fields += ["invoice_key", "snapshot_id"]
+        rows = invoices.search_read(domain, annual_fields)
+        if warehouse_ids:
+            lines = []
+            ids = [row["id"] for row in rows]
+            for offset in range(0, len(ids), 5000):
+                lines += self.env["dispatch.invoice.line"].search_read([
+                    ("invoice_id", "in", ids[offset:offset + 5000]),
+                    ("warehouse_id", "in", warehouse_ids)], ["invoice_id", "raw_data"])
+            rows = self._scope_warehouse_rows(rows, lines)
+        return monthly_dispatch(rows, year)
+
+    @api.model
     def get_data(self, filters=None, board_id=False, include_ids=False):
         filters = filters or {}
         domain = self._domain(filters)
@@ -97,17 +151,7 @@ class DispatchDashboard(models.AbstractModel):
             if warehouse_ids: line_fields += ["raw_data"]
             transport_lines += self.env["dispatch.invoice.line"].search_read(line_domain,line_fields)
         if warehouse_ids:
-            line_groups = defaultdict(list)
-            for line in transport_lines:
-                if line.get("raw_data"): line_groups[line["invoice_id"][0]].append(line["raw_data"])
-            snapshots_for_scope = self.env["dispatch.snapshot"].browse(sorted({r["snapshot_id"][0] for r in rows}))
-            packs_for_scope = {snapshot.id:snapshot.policy_pack or {} for snapshot in snapshots_for_scope}
-            scoped = []
-            for row in rows:
-                if row["id"] not in line_groups: continue
-                summary = aggregate_invoice(row["invoice_key"],line_groups[row["id"]],row["cutoff_date"])
-                scoped.append({**row,**evaluate(summary,packs_for_scope.get(row["snapshot_id"][0],{}))})
-            rows = scoped
+            rows = self._scope_warehouse_rows(rows, transport_lines)
         stats = summarize(rows)
         timeliness = dispatch_timeliness(rows, include_ids)
         timeliness_ids = timeliness.pop("detail_ids", {})
@@ -195,6 +239,7 @@ class DispatchDashboard(models.AbstractModel):
                 group.pop("invoice_ids")
         return {"stats": stats, "cities": cities, "period": period, "transport": transport,"detail_ids":detail_ids,
                 "agreements": agreements, "dispatch_progress": progress, "timeliness": timeliness,
+                "monthly": self._annual_statistics(filters) if not include_ids else False,
                 "warehouse_options":self.env["dispatch.warehouse"].search_read([], ["name","code","company_id"],order="name,code"),
                 "warehouse_scope":bool(warehouse_ids),
                 "aging": [{"label": label, "value": value} for label, value in zip(["0–2 días", "3–5 días", "6–10 días", "11–30 días", "31–60 días", "Más de 60"], aging)],
@@ -224,6 +269,79 @@ class DispatchDashboard(models.AbstractModel):
             GROUP BY company_id,invoice_type,internal_number HAVING count(*)>1) duplicates""",(self.env.companies.ids,))
         return {"current":current,"historical_versions":historical,"current_duplicate_keys":self.env.cr.fetchone()[0],
                 "consolidated_records":consolidated}
+
+    @api.model
+    def _active_filter_scope(self):
+        """Keep preferences separate for each set of enabled companies."""
+        return ",".join(str(company_id) for company_id in sorted(self.env.companies.ids))
+
+    @api.model
+    def get_active_filter_state(self):
+        """Restore the user's last *applied* selection, not default dates."""
+        self._access()
+        record = self.env["dispatch.dashboard.state"].sudo().search([
+            ("user_id", "=", self.env.uid),
+            ("company_scope", "=", self._active_filter_scope()),
+        ], limit=1)
+        if not record:
+            return False
+        filters = record.filters_json if isinstance(record.filters_json, dict) else {}
+        allowed_keys = ("source_id", "snapshot_id", "date_from", "date_to", "city", "delivery",
+                        "planning_scope", "planning_grouping", "warehouse_ids")
+        # A board can become private or be deleted after it was selected.
+        board_id = record.board_id.id if record.board_id and self.env["dispatch.board"].search([
+            ("id", "=", record.board_id.id)], limit=1) else False
+        favorites = self.get_saved_filters() if record.favorite_id else []
+        favorite_id = record.favorite_id.id if any(
+            favorite["id"] == record.favorite_id.id for favorite in favorites) else False
+        return {
+            "filters": {key: filters[key] for key in allowed_keys if key in filters},
+            "board_id": board_id,
+            "favorite_id": favorite_id,
+        }
+
+    @api.model
+    def save_active_filter_state(self, filters=None, board_id=False, favorite_id=False):
+        """Remember only validated filters successfully applied to the dashboard."""
+        self._access()
+        if not isinstance(filters, dict):
+            raise ValidationError(_("Filtros inválidos."))
+        allowed_keys = ("source_id", "snapshot_id", "date_from", "date_to", "city", "delivery",
+                        "planning_scope", "planning_grouping", "warehouse_ids")
+        allowed = {key: filters[key] for key in allowed_keys if key in filters}
+        self._domain(allowed)
+        if allowed.get("planning_scope", "transcash") not in ("transcash", "filtered"):
+            raise ValidationError(_("Alcance de planificación no permitido."))
+        if allowed.get("planning_grouping", "warehouse") not in ("warehouse", "destination"):
+            raise ValidationError(_("Forma de agrupar la carga no permitida."))
+        if board_id:
+            board = self.env["dispatch.board"].browse(int(board_id)).exists()
+            if not board:
+                board_id = False
+            else:
+                board.check_access_rights("read")
+                board.check_access_rule("read")
+                board_id = board.id
+        if favorite_id:
+            try:
+                favorite_id = int(favorite_id)
+            except (TypeError, ValueError):
+                favorite_id = False
+            if favorite_id and not any(f["id"] == favorite_id for f in self.get_saved_filters()):
+                favorite_id = False
+        values = {"filters_json": allowed, "board_id": board_id or False,
+                  "favorite_id": favorite_id or False}
+        model = self.env["dispatch.dashboard.state"].sudo()
+        record = model.search([
+            ("user_id", "=", self.env.uid),
+            ("company_scope", "=", self._active_filter_scope()),
+        ], limit=1)
+        if record:
+            record.write(values)
+        else:
+            model.create({**values, "user_id": self.env.uid,
+                          "company_scope": self._active_filter_scope()})
+        return True
 
     @api.model
     def get_saved_filters(self):
