@@ -6,7 +6,7 @@ import uuid
 from time import perf_counter
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
-from ..services.engine import aggregate_invoice, as_date, evaluate, invoice_key, iter_invoice_groups, normalize, number, unique_invoice_lines, weight_metrics, pallet_metrics
+from ..services.engine import aggregate_invoice, as_date, evaluate, invoice_display_name, invoice_key, iter_invoice_groups, normalize, number, unique_invoice_lines, weight_metrics, pallet_metrics
 from ..services.xlsx_reader import iter_xlsx_rows
 from ..services.import_progress import ACTIVE_STATES, progress_values
 from ..services.import_optimization import (BACKGROUND_BATCH_SIZE, background_limits,
@@ -311,11 +311,16 @@ class DispatchSnapshot(models.Model):
 
     def _invoice_values(self, item, warehouse_map=None):
         summary=item["summary"]
-        canonical_key=invoice_key({"Factura":summary.get("external_number"), "TipoFactura":summary["invoice_type"],"NumeroFactura":summary["internal_number"]})
+        canonical_key=invoice_key({"TipoFactura":summary["invoice_type"],"NumeroFactura":summary["internal_number"]})
         if summary.get("invoice_key")!=canonical_key or "invoiced_weight" not in summary or "invoiced_pallets" not in summary:
             unique,_,_=unique_invoice_lines(item["lines"])
             summary=aggregate_invoice(canonical_key,unique,self.cutoff_date)
             item={"summary":summary,"lines":unique}
+        # Prepared blocks from 1.8.10 still contain legacy display labels.
+        summary = dict(summary, name=invoice_display_name({
+            "Factura": summary.get("external_number"), "TipoFactura": summary["invoice_type"],
+            "NumeroFactura": summary["internal_number"],
+        }))
         calculated = evaluate(summary, self.policy_pack or {})
         values = {k: v for k, v in calculated.items() if k in self.env["dispatch.invoice"]._fields and k != "cutoff_date"}
         values.update({"snapshot_id": self.id, "lead_available": calculated["lead_days"] is not None,

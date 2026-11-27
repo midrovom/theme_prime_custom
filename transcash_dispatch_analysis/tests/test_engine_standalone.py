@@ -38,7 +38,7 @@ def pack(days=2, day_type="calendar"):
 
 class EngineTests(unittest.TestCase):
     def test_distinct_invoice_not_product_rows(self):
-        rows = [line(), line(CodProducto="P2"), line(NumeroFactura="101", Factura="001-2")]
+        rows = [line(), line(CodProducto="P2"), line(NumeroFactura="101")]
         groups = list(e.iter_invoice_groups(iter(rows)))
         self.assertEqual(len(groups), 2)
         self.assertEqual(sorted(len(r) for _, r in groups), [1, 2])

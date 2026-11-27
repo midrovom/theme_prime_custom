@@ -1,9 +1,3 @@
-# Versión 18.0.1.8.11 — Factura externa
-
-La clave vigente es el número externo `Factura` por compañía, mostrado como `FAC/número externo`. `TipoFactura` y `NumeroFactura` se conservan para trazabilidad; si la fuente no entrega un número externo, el documento se conserva separado con el rótulo `FAC/SIN NÚMERO EXTERNO (tipo interno)` y una clave de respaldo. Los apartados de versiones anteriores describen sus reglas históricas, no la nueva identidad.
-
-La migración reconstruye los cortes terminados a partir de los originales guardados (o sus líneas de origen si el archivo no está disponible), conserva las políticas de cada corte y reinicia la preparación de importaciones parciales. Ejecutar con copia de seguridad, servicio detenido y sin sincronizaciones concurrentes. Los identificadores técnicos de las facturas reconstruidas pueden cambiar.
-
 # Transcash · Análisis de despachos para Odoo 18
 
 Versión 18.0.1.8.7 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
@@ -159,7 +153,7 @@ Ejemplo desde una instalación con `odoo-bin`:
 ./odoo-bin -d base_prueba --addons-path=/ruta/odoo/addons,/ruta/custom_addons -i transcash_dispatch_analysis --stop-after-init
 ```
 
-Para actualizar desde 18.0.1.8.10 o anterior, seguir el procedimiento de mantenimiento de `docs/ACTUALIZACION_RAPIDA_V1_8_12.md`. La conversión externa ya no reconstruye todos los cortes. Una instalación que completó 18.0.1.8.11 no repite esa migración. Después de actualizar, recargar el navegador con Ctrl+F5.
+Después de reemplazar una versión ya instalada, reiniciar Odoo, actualizar el módulo desde Aplicaciones y recargar el navegador con Ctrl+F5.
 
 No requiere paquetes Python adicionales. El lector XLSX usa la biblioteca estándar. Admite una hoja visible, archivos de hasta 40 MiB, contenido expandido de hasta 300 MiB y 500.000 líneas. El archivo recibido tiene 8,16 MiB y 54.392 registros. El proxy HTTP debe permitir una carga de al menos 64 MiB para cubrir la representación base64 del tamaño máximo admitido.
 
@@ -167,7 +161,7 @@ No requiere paquetes Python adicionales. El lector XLSX usa la biblioteca están
 
 El filtro inicial consulta los últimos 30 días e incluye todas las condiciones de entrega. Seleccionar **Entrega Transcash** para analizar exclusivamente esa modalidad. El plan de vehículos comienza solo con Entrega Transcash. Los retiros de clientes siguen visibles y se pueden analizar por separado. **Todas las fechas** permite consultar el historial vigente completo. Cargar un favorito conserva las fechas que tienes seleccionadas en pantalla.
 
-Una factura pendiente tiene al menos una línea con `Pendiente > 0,000001`. Una línea con saldo negativo no compensa el pendiente de otra línea. Se identifica por `Factura` (número externo) dentro de la compañía, conservando todas sus bodegas y productos distintos como detalle. Se muestra como `FAC/número externo`; si falta el externo se conserva una clave de respaldo por tipo y número interno. Las fuentes y cortes conservan versiones; solo la observación vigente más reciente de esa llave entra en la operación.
+Una factura pendiente tiene al menos una línea con `Pendiente > 0,000001`. Una línea con saldo negativo no compensa el pendiente de otra línea. Se identifica por `TipoFactura + NumeroFactura` dentro de la compañía, conservando todas sus bodegas y productos distintos como detalle. Establecimiento y la columna Factura son descriptivos. Las fuentes y cortes conservan versiones; solo la observación vigente más reciente de esa llave entra en la operación.
 
 Las facturas con registros de más de una bodega se agrupan en **VARIAS BODEGAS** para no duplicarlas. Las bodegas originales se conservan en el detalle de origen. No se suman cantidades heterogéneas de productos para fabricar un porcentaje de despacho.
 
@@ -207,3 +201,7 @@ La entrega no implica que se haya instalado el módulo en un servidor Odoo. Ver 
 - [Seguridad de Odoo 18](https://www.odoo.com/documentation/18.0/developer/reference/backend/security.html)
 - [API externa y API keys](https://www.odoo.com/documentation/18.0/developer/reference/external_api.html)
 - [Restricciones de módulos Python en Odoo Online](https://www.odoo.com/documentation/18.0/developer/howtos/upgrade_custom_db.html)
+
+### 18.0.1.8.13 — Presentación externa sin fusión histórica
+
+La etiqueta de factura usa `FAC/<Factura>`; los cálculos conservan la clave original por empresa, tipo y número interno para no mezclar consecutivos externos repetidos. La actualización desde 1.8.10 solo cambia las etiquetas mediante SQL. No instalar sobre 1.8.11/12 ya aplicadas sin restaurar o recuperar previamente. Véase `docs/ACTUALIZACION_SEGURA_V1_8_13.md`.

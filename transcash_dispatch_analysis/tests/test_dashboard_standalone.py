@@ -86,6 +86,14 @@ class DashboardTests(unittest.TestCase):
         self.service = module.DispatchDashboard()
         self.service.env = Environment(self.rows,self.lines)
 
+    def test_old_stored_labels_are_not_used_for_dashboard(self):
+        for row in self.rows:
+            row.update(external_number='0007', invoice_type='FA', internal_number=str(row['id']))
+        result = self.service.get_data({"date_from":"2026-02-01","date_to":"2026-02-28"})
+        self.assertEqual(result["stats"]["total"], 2)
+        self.assertEqual([r['name'] for r in result['priority']], ['FAC/0007', 'FAC/0007'])
+        self.assertEqual([r['name'] for r in self.rows], ['A', 'B', 'C'])
+
     def test_date_filter_reaches_kpis_and_transport_plan(self):
         result = self.service.get_data({"date_from":"2026-02-01","date_to":"2026-02-28"})
         self.assertEqual(result["stats"]["total"],2)

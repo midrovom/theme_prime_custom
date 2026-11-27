@@ -5,13 +5,13 @@ import json
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools.safe_eval import safe_eval
-from ..services.engine import aggregate_invoice, as_date, evaluate, grouped, summarize, METRICS, GROUPS
+from ..services.engine import aggregate_invoice, as_date, evaluate, grouped, invoice_display_name, summarize, METRICS, GROUPS
 from ..services.planning import build_transport_plan
 from ..services.overview import pending_by_agreement, dispatch_progress, pending_plan_reconciliation
 from ..services.timeliness import dispatch_timeliness
 from ..services.monthly import monthly_dispatch
 
-READ_FIELDS = ["name", "invoice_key", "snapshot_id", "source_id", "company_id", "external_number", "internal_number", "invoice_date", "customer", "city", "delivery", "warehouse", "seller",
+READ_FIELDS = ["invoice_type", "invoice_key", "snapshot_id", "source_id", "company_id", "external_number", "internal_number", "invoice_date", "customer", "city", "delivery", "warehouse", "seller",
     "state", "pending", "pending_lines", "pending_weight", "pending_boxes", "pending_pallets", "has_adjustment", "physically_completed", "source_warnings", "source_grain",
     "completion_date", "quality_flags", "quality_issue", "cutoff_date", "age_days", "lead_days", "lead_available", "sla_configured",
     "deadline", "sla_status", "late_days", "eligible", "mature", "on_time", "invoiced_weight", "dispatched_weight", "invoiced_weight_missing_rows", "dispatched_weight_missing_rows",
@@ -131,6 +131,8 @@ class DispatchDashboard(models.AbstractModel):
             raise UserError(_("Seleccione una fuente o un período con menos de 200.000 facturas para el tablero. Las vistas dinámicas siguen disponibles."))
         rows = invoices.search_read(domain, READ_FIELDS)
         for row in rows:
+            row["name"] = invoice_display_name({"Factura": row["external_number"],
+                "TipoFactura": row["invoice_type"], "NumeroFactura": row["internal_number"]})
             if not row.pop("lead_available"):
                 row["lead_days"] = None
             for field in ("invoice_date", "completion_date", "cutoff_date", "deadline"):
@@ -264,9 +266,9 @@ class DispatchDashboard(models.AbstractModel):
         company_domain=[("company_id","in",self.env.companies.ids)]
         current=invoices.search_count(company_domain+[("is_current","=",True)])
         historical=invoices.search_count(company_domain+[("snapshot_state","=","archived")])
-        self.env.cr.execute("""SELECT count(*) FROM (SELECT company_id,invoice_key
+        self.env.cr.execute("""SELECT count(*) FROM (SELECT company_id,invoice_type,internal_number
             FROM dispatch_invoice WHERE company_id=ANY(%s) AND is_current
-            GROUP BY company_id,invoice_key HAVING count(*)>1) duplicates""",(self.env.companies.ids,))
+            GROUP BY company_id,invoice_type,internal_number HAVING count(*)>1) duplicates""",(self.env.companies.ids,))
         return {"current":current,"historical_versions":historical,"current_duplicate_keys":self.env.cr.fetchone()[0],
                 "consolidated_records":consolidated}
 

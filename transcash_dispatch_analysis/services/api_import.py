@@ -5,7 +5,7 @@ import json
 import re
 from zoneinfo import ZoneInfo
 
-from .engine import as_date, external_invoice_number, invoice_key, normalize, number
+from .engine import as_date, invoice_key, normalize, number
 
 ENDPOINT = "getdatosdespachos"
 MAX_ROWS = 500_000
@@ -203,11 +203,6 @@ def convert_dispatch_payload(raw, today, timezone="America/Guayaquil"):
             if isinstance(value, bool) or not isinstance(value, (str, int)) or not str(value).strip():
                 raise DispatchAPIError("La línea %s necesita %s como texto o entero; conserve los ceros iniciales como texto." % (index, name))
             row[name] = normalize(value) if name == "TipoFactura" else str(value).strip()
-        try:
-            if "Factura" in row:
-                row["Factura"] = external_invoice_number(row["Factura"])
-        except ValueError as exc:
-            raise DispatchAPIError("Línea %s: %s" % (index, exc)) from None
         try:
             identity = invoice_key(row)
             for name in NUMERIC_FIELDS:
