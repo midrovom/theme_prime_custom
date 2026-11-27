@@ -37,13 +37,6 @@ def pack(days=2, day_type="calendar"):
 
 
 class EngineTests(unittest.TestCase):
-    def test_invoice_reference_fields_remain_distinct(self):
-        result = inv([line(NumeroFactura="343475", Factura="7347")])
-        self.assertEqual(result["name"], "FA 343475")
-        self.assertEqual(result["internal_number"], "343475")
-        self.assertEqual(result["external_number"], "7347")
-        self.assertEqual(inv([line(Factura="0007347")])["external_number"], "0007347")
-
     def test_distinct_invoice_not_product_rows(self):
         rows = [line(), line(CodProducto="P2"), line(NumeroFactura="101")]
         groups = list(e.iter_invoice_groups(iter(rows)))

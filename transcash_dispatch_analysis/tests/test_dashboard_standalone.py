@@ -86,14 +86,6 @@ class DashboardTests(unittest.TestCase):
         self.service = module.DispatchDashboard()
         self.service.env = Environment(self.rows,self.lines)
 
-    def test_old_stored_labels_are_not_used_for_dashboard(self):
-        for row in self.rows:
-            row.update(external_number='0007', invoice_type='FA', internal_number=str(row['id']))
-        result = self.service.get_data({"date_from":"2026-02-01","date_to":"2026-02-28"})
-        self.assertEqual(result["stats"]["total"], 2)
-        self.assertEqual([r['name'] for r in result['priority']], ['FA 2', 'FA 3'])
-        self.assertEqual([r['name'] for r in self.rows], ['A', 'B', 'C'])
-
     def test_date_filter_reaches_kpis_and_transport_plan(self):
         result = self.service.get_data({"date_from":"2026-02-01","date_to":"2026-02-28"})
         self.assertEqual(result["stats"]["total"],2)
@@ -128,7 +120,6 @@ class DashboardTests(unittest.TestCase):
 
     def test_multiple_warehouses_scope_weights_and_fleet_to_selected_detail(self):
         for row in self.rows:
-            row["external_number"]="000"+str(row["id"])
             row["warehouse_ids"]=[10,20]
             row["snapshot_id"]=[1,"Cut"]
             row["invoice_key"]='["FA","%s"]'%row["id"]
@@ -143,7 +134,6 @@ class DashboardTests(unittest.TestCase):
         snapshot=SimpleNamespace(id=1,policy_pack={"rules":[{"city_key":"GUAYAQUIL","delivery_key":"","max_days":3,"day_type":"calendar"}]})
         self.service.env.models["dispatch.snapshot"].browse=lambda ids:[snapshot]
         result=self.service.get_data({"warehouse_ids":[10]})
-        self.assertEqual(result["timeliness"]["delays"]["pending"]["top"][0]["external_label"], "FAC/0002")
         self.assertEqual(result["stats"]["pending_tons"],9)
         self.assertEqual(result["transport"]["pending_tons"],9)
         self.assertEqual(result["stats"]["pending"],1)

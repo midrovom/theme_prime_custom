@@ -2,7 +2,7 @@ import json
 import logging
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError
-from ..services.engine import aggregate_invoice, evaluate, internal_invoice_label, invoice_key, latest_invoice_versions, normalize, unique_invoice_lines, weight_metrics, pallet_metrics
+from ..services.engine import aggregate_invoice, evaluate, invoice_key, latest_invoice_versions, normalize, unique_invoice_lines, weight_metrics, pallet_metrics
 
 _logger = logging.getLogger(__name__)
 
@@ -83,29 +83,6 @@ class DispatchInvoice(models.Model):
     on_time = fields.Boolean(string="Despachada a tiempo", index=True)
     line_ids = fields.One2many("dispatch.invoice.line", "invoice_id", string="Registros de origen")
     _sql_constraints = [("snapshot_invoice", "unique(snapshot_id,invoice_key)", "La factura ya existe en este corte.")]
-
-    @api.depends("invoice_type", "internal_number")
-    def _compute_display_name(self):
-        # Read-time internal label, including records saved with a FAC/ name.
-        # No historical writes or recomputation of stored fields are required.
-        for invoice in self:
-            invoice.display_name = internal_invoice_label({
-                "TipoFactura": invoice.invoice_type,
-                "NumeroFactura": invoice.internal_number,
-            })
-
-    @api.model
-    def _search_display_name(self, operator, value):
-        if isinstance(value, str) and operator in (
-                "=", "!=", "like", "ilike", "=like", "=ilike", "not like", "not ilike"):
-            parts = value.strip().split(None, 1)
-            negative = operator in ("!=", "not like", "not ilike")
-            if len(parts) == 2:
-                return (["|"] if negative else []) + [
-                    ("invoice_type", operator, parts[0]), ("internal_number", operator, parts[1])]
-            return ([] if negative else ["|"]) + [
-                ("invoice_type", operator, value), ("internal_number", operator, value)]
-        return super()._search_display_name(operator, value)
 
     @api.depends("pending_weight")
     def _compute_pending_tons(self):

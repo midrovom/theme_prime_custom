@@ -7,7 +7,7 @@ so business-day and calendar-day agreements can be compared without mixing units
 """
 from heapq import nsmallest
 
-from .engine import as_date, external_invoice_number
+from .engine import as_date
 
 
 def dispatch_timeliness(rows, include_ids=False):
@@ -48,8 +48,8 @@ def dispatch_timeliness(rows, include_ids=False):
             late[cohort].append((days, deadline, end, row))
 
     def external_label(row):
-        number = external_invoice_number(row.get("delay_external_number", row.get("external_number")))
-        return "FA/" + number if number else "FA/SIN NÚMERO EXTERNO"
+        number = row.get("delay_external_number", row.get("external_number"))
+        return "FA/" + (str(number).strip() if number is not None and number is not False and str(number).strip() else "SIN NÚMERO EXTERNO")
 
     def delay_summary(items):
         ordered = nsmallest(10, items, key=lambda item: (-item[0], item[1], str(item[3].get("name") or ""), item[3]["id"]))

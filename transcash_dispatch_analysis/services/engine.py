@@ -53,25 +53,6 @@ def as_date(value):
         raise ValueError("Fecha inválida: %s. Utilice YYYY-MM-DD." % value) from exc
 
 
-def external_invoice_number(value):
-    """Display the external sequence as text, retaining leading zeros."""
-    text = str(value if value is not None and value is not False else "").strip()
-    if text[:4].upper() == "FAC/":
-        text = text[4:].strip()
-    return text
-
-
-def internal_invoice_label(row):
-    """Original ERP identity; independent of the external archive reference."""
-    return "%s %s" % (normalize(row.get("TipoFactura")), str(row.get("NumeroFactura") or "").strip())
-
-
-def invoice_display_name(row):
-    external = external_invoice_number(row.get("Factura"))
-    return "FAC/" + external if external else "FAC/SIN NÚMERO EXTERNO (%s %s)" % (
-        normalize(row.get("TipoFactura")), str(row.get("NumeroFactura") or "").strip())
-
-
 def invoice_key(row):
     required = (normalize(row.get("TipoFactura")), str(row.get("NumeroFactura") or "").strip())
     if not all(required):
@@ -265,8 +246,8 @@ def aggregate_invoice(key, rows, cutoff):
     first = rows[0]
     return {
         "invoice_key": key,
-        "name": internal_invoice_label(first),
-        "external_number": str(first.get("Factura") if first.get("Factura") is not None and first.get("Factura") is not False else ""),
+        "name": "%s %s" % (first.get("TipoFactura", ""), first.get("NumeroFactura", "")),
+        "external_number": str(first.get("Factura") or ""),
         "invoice_type": normalize(first.get("TipoFactura")),
         "internal_number": str(first.get("NumeroFactura") or "").strip(),
         "establishment": str(first.get("Establecimiento") or ""),

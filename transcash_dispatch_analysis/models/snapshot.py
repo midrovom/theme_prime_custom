@@ -6,7 +6,7 @@ import uuid
 from time import perf_counter
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
-from ..services.engine import aggregate_invoice, as_date, evaluate, internal_invoice_label, invoice_key, iter_invoice_groups, normalize, number, unique_invoice_lines, weight_metrics, pallet_metrics
+from ..services.engine import aggregate_invoice, as_date, evaluate, invoice_key, iter_invoice_groups, normalize, number, unique_invoice_lines, weight_metrics, pallet_metrics
 from ..services.xlsx_reader import iter_xlsx_rows
 from ..services.import_progress import ACTIVE_STATES, progress_values
 from ..services.import_optimization import (BACKGROUND_BATCH_SIZE, background_limits,
@@ -316,11 +316,6 @@ class DispatchSnapshot(models.Model):
             unique,_,_=unique_invoice_lines(item["lines"])
             summary=aggregate_invoice(canonical_key,unique,self.cutoff_date)
             item={"summary":summary,"lines":unique}
-        # Prepared blocks may contain a former FAC/ display label.
-        summary = dict(summary, name=internal_invoice_label({
-            "Factura": summary.get("external_number"), "TipoFactura": summary["invoice_type"],
-            "NumeroFactura": summary["internal_number"],
-        }))
         calculated = evaluate(summary, self.policy_pack or {})
         values = {k: v for k, v in calculated.items() if k in self.env["dispatch.invoice"]._fields and k != "cutoff_date"}
         values.update({"snapshot_id": self.id, "lead_available": calculated["lead_days"] is not None,

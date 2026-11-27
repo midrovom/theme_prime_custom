@@ -495,17 +495,3 @@ class TestDispatchIntegration(TransactionCase):
         self.assertEqual(result["timeliness"]["delays"]["completed"]["max_days"], 4)
         self.assertEqual(service.get_data({"source_id": self.source.id})["timeliness"]["pie"]["total"], 0)
         self.assertEqual(self.env["dispatch.invoice"].search(service.get_detail_action(filters, "late_completed")["domain"]), invoice)
-
-    def test_stored_external_label_displays_internal_without_rewriting(self):
-        snapshot = self._snapshot("dynamic-external-label")
-        snapshot._prepare(); snapshot._load_next()
-        invoice = snapshot.invoice_ids
-        invoice.name = "FAC/001"
-        self.assertEqual(invoice.display_name, "FA 1")
-        self.assertEqual(invoice.name, "FAC/001")
-        model = self.env["dispatch.invoice"]
-        for search in ("FA 1", "1"):
-            self.assertIn(invoice.id, model.search([("id", "=", invoice.id), ("display_name", "ilike", search)]).ids)
-        data = self.env["dispatch.dashboard"].get_data({"source_id": self.source.id})
-        self.assertEqual(data["priority"][0]["name"], "FA 1")
-        self.assertEqual(invoice.name, "FAC/001")
