@@ -61,6 +61,11 @@ def external_invoice_number(value):
     return text
 
 
+def internal_invoice_label(row):
+    """Original ERP identity; independent of the external archive reference."""
+    return "%s %s" % (normalize(row.get("TipoFactura")), str(row.get("NumeroFactura") or "").strip())
+
+
 def invoice_display_name(row):
     external = external_invoice_number(row.get("Factura"))
     return "FAC/" + external if external else "FAC/SIN NÚMERO EXTERNO (%s %s)" % (
@@ -260,8 +265,8 @@ def aggregate_invoice(key, rows, cutoff):
     first = rows[0]
     return {
         "invoice_key": key,
-        "name": invoice_display_name(first),
-        "external_number": external_invoice_number(first.get("Factura")),
+        "name": internal_invoice_label(first),
+        "external_number": str(first.get("Factura") if first.get("Factura") is not None and first.get("Factura") is not False else ""),
         "invoice_type": normalize(first.get("TipoFactura")),
         "internal_number": str(first.get("NumeroFactura") or "").strip(),
         "establishment": str(first.get("Establecimiento") or ""),

@@ -49,7 +49,7 @@ def dispatch_timeliness(rows, include_ids=False):
 
     def external_label(row):
         number = external_invoice_number(row.get("delay_external_number", row.get("external_number")))
-        return "FAC/" + number if number else "FAC/SIN NÚMERO EXTERNO"
+        return "FA/" + number if number else "FA/SIN NÚMERO EXTERNO"
 
     def delay_summary(items):
         ordered = nsmallest(10, items, key=lambda item: (-item[0], item[1], str(item[3].get("name") or ""), item[3]["id"]))

@@ -91,7 +91,7 @@ class DashboardTests(unittest.TestCase):
             row.update(external_number='0007', invoice_type='FA', internal_number=str(row['id']))
         result = self.service.get_data({"date_from":"2026-02-01","date_to":"2026-02-28"})
         self.assertEqual(result["stats"]["total"], 2)
-        self.assertEqual([r['name'] for r in result['priority']], ['FAC/0007', 'FAC/0007'])
+        self.assertEqual([r['name'] for r in result['priority']], ['FA 2', 'FA 3'])
         self.assertEqual([r['name'] for r in self.rows], ['A', 'B', 'C'])
 
     def test_date_filter_reaches_kpis_and_transport_plan(self):

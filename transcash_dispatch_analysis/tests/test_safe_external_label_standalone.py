@@ -33,6 +33,12 @@ class SafeExternalLabelTests(unittest.TestCase):
         self.assertEqual(engine.invoice_display_name(a), engine.invoice_display_name(b))
         self.assertNotEqual(engine.invoice_key(a), engine.invoice_key(b))
         self.assertEqual(len(list(engine.iter_invoice_groups([a,b]))),2)
+    def test_internal_and_external_references_are_independent(self):
+        row = {'TipoFactura':'FA','NumeroFactura':'343475','Factura':'7347'}
+        self.assertEqual(engine.internal_invoice_label(row), 'FA 343475')
+        self.assertEqual(engine.invoice_display_name(row), 'FAC/7347')
+        self.assertEqual(engine.invoice_key(row), '["FA","343475"]')
+
     def test_label_formats(self):
         row = {'TipoFactura':'FA','NumeroFactura':'20'}
         self.assertEqual(engine.invoice_display_name(dict(row,Factura=' 0007 ')), 'FAC/0007')
@@ -57,13 +63,27 @@ class SafeExternalLabelTests(unittest.TestCase):
         from types import SimpleNamespace
         from test_import_queue_standalone import load_model
         cls = load_model('invoice').DispatchInvoice
-        rows = [SimpleNamespace(name='FA 320484', external_number='0007', invoice_type='FA', internal_number='320484'),
+        rows = [SimpleNamespace(name='FAC/0007', external_number='0007', invoice_type='FA', internal_number='320484'),
                 SimpleNamespace(name='FA 320485', external_number='fac/ 0007 ', invoice_type='FA', internal_number='320485')]
         cls._compute_display_name(rows)
-        self.assertEqual([r.display_name for r in rows], ['FAC/0007', 'FAC/0007'])
-        self.assertEqual([r.name for r in rows], ['FA 320484', 'FA 320485'])
-        self.assertEqual(cls._search_display_name(None, 'ilike', 'FAC/0007'),
-                         ['|', ('external_number', 'ilike', '0007'), ('external_number', 'ilike', 'FAC/0007')])
+        self.assertEqual([r.display_name for r in rows], ['FA 320484', 'FA 320485'])
+        self.assertEqual([r.name for r in rows], ['FAC/0007', 'FA 320485'])
+        self.assertEqual(cls._search_display_name(None, 'ilike', 'FA 320484'),
+                         [('invoice_type', 'ilike', 'FA'), ('internal_number', 'ilike', '320484')])
+    def test_timeliness_uses_fa_prefix_only_in_delay_widget(self):
+        from test_planning_standalone import load
+        timeliness = load('timeliness')
+        rows = [{
+            "id": 1, "physically_completed": True, "pending": False,
+            "eligible": True, "sla_configured": True, "quality_issue": False,
+            "has_adjustment": False, "sla_status": "late",
+            "invoice_date": "2026-11-01", "deadline": "2026-11-08",
+            "cutoff_date": "2026-11-27", "completion_date": "2026-11-27",
+            "external_number": "4791", "name": "FA 343475"
+        }]
+        result = timeliness.dispatch_timeliness(rows)
+        self.assertEqual(result["delays"]["completed"]["top"][0]["external_label"], "FA/4791")
+
     def test_views_use_dynamic_name(self):
         import xml.etree.ElementTree as ET
         root = ET.parse(ROOT / 'views/invoice_views.xml').getroot()

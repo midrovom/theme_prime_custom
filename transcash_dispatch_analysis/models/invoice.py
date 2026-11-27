@@ -2,7 +2,7 @@ import json
 import logging
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError
-from ..services.engine import aggregate_invoice, evaluate, external_invoice_number, invoice_display_name, invoice_key, latest_invoice_versions, normalize, unique_invoice_lines, weight_metrics, pallet_metrics
+from ..services.engine import aggregate_invoice, evaluate, internal_invoice_label, invoice_key, latest_invoice_versions, normalize, unique_invoice_lines, weight_metrics, pallet_metrics
 
 _logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class DispatchInvoice(models.Model):
     company_id = fields.Many2one(related="snapshot_id.company_id", store=True, index=True)
     snapshot_state = fields.Selection(related="snapshot_id.state", store=True, index=True)
     cutoff_date = fields.Date(related="snapshot_id.cutoff_date", store=True)
-    external_number = fields.Char(string="Número externo de factura", index=True)
+    external_number = fields.Char(string="Factura (archivo)", index=True)
     invoice_type = fields.Char(string="Tipo", required=True)
     internal_number = fields.Char(string="NumeroFactura (archivo)", index=True, required=True)
     establishment = fields.Char(string="Establecimiento", index=True)
@@ -84,31 +84,27 @@ class DispatchInvoice(models.Model):
     line_ids = fields.One2many("dispatch.invoice.line", "invoice_id", string="Registros de origen")
     _sql_constraints = [("snapshot_invoice", "unique(snapshot_id,invoice_key)", "La factura ya existe en este corte.")]
 
-    @api.depends("external_number", "invoice_type", "internal_number")
+    @api.depends("invoice_type", "internal_number")
     def _compute_display_name(self):
-        # display_name is non-stored in Odoo 18: only records being read are
-        # formatted. Existing stored names, keys and historical lines stay intact.
+        # Read-time internal label, including records saved with a FAC/ name.
+        # No historical writes or recomputation of stored fields are required.
         for invoice in self:
-            invoice.display_name = invoice_display_name({
-                "Factura": invoice.external_number,
+            invoice.display_name = internal_invoice_label({
                 "TipoFactura": invoice.invoice_type,
                 "NumeroFactura": invoice.internal_number,
             })
 
     @api.model
     def _search_display_name(self, operator, value):
-        # Search the stored external reference, not the legacy stored label.
-        # Accept both FAC/0007 and 0007, including legacy prefixed source values.
         if isinstance(value, str) and operator in (
                 "=", "!=", "like", "ilike", "=like", "=ilike", "not like", "not ilike"):
-            number = external_invoice_number(value)
+            parts = value.strip().split(None, 1)
             negative = operator in ("!=", "not like", "not ilike")
-            if not number:
-                if value.strip().upper() == "FAC/" and operator in ("like", "ilike", "not like", "not ilike"):
-                    return [("id", "=", 0)] if negative else []
-                return [("external_number", operator, False if operator in ("=", "!=") else number)]
-            return [("external_number", operator, number), ("external_number", operator, "FAC/" + number)] if negative else [
-                "|", ("external_number", operator, number), ("external_number", operator, "FAC/" + number)]
+            if len(parts) == 2:
+                return (["|"] if negative else []) + [
+                    ("invoice_type", operator, parts[0]), ("internal_number", operator, parts[1])]
+            return ([] if negative else ["|"]) + [
+                ("invoice_type", operator, value), ("internal_number", operator, value)]
         return super()._search_display_name(operator, value)
 
     @api.depends("pending_weight")

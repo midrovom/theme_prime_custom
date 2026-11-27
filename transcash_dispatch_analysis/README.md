@@ -205,3 +205,7 @@ La entrega no implica que se haya instalado el módulo en un servidor Odoo. Ver 
 ### 18.0.1.8.13 — Presentación externa sin fusión histórica
 
 La etiqueta de factura usa `FAC/<Factura>`; los cálculos conservan la clave original por empresa, tipo y número interno para no mezclar consecutivos externos repetidos. La actualización desde 1.8.10 solo cambia las etiquetas mediante SQL. No instalar sobre 1.8.11/12 ya aplicadas sin restaurar o recuperar previamente. Véase `docs/ACTUALIZACION_SEGURA_V1_8_13.md`.
+
+
+### 18.0.1.8.17 — Referencias independientes
+El formulario, el listado y los demás nombres generales muestran dinámicamente `TipoFactura NumeroFactura`. `Factura (archivo)` conserva la referencia externa. Solo la columna Factura / destino de Mayores retrasos muestra `FA/<Factura>`, tomando la referencia de cabecera incluso al filtrar bodegas. No hay migración nueva ni reescritura de históricos.
