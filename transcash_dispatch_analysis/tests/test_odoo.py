@@ -30,7 +30,7 @@ class TestDispatchIntegration(TransactionCase):
     def test_prepared_chunk_resumes_from_database_cursor(self):
         ident=self.source.api_start_batch("bounded-cursor","2026-01-10")["id"]
         snapshot=self.env["dispatch.snapshot"].browse(ident)
-        rows=[dict(self.row,NumeroFactura="LOAD-%s"%i) for i in range(250)]
+        rows=[dict(self.row,NumeroFactura="LOAD-%s"%i, Factura="LOAD-%s"%i) for i in range(250)]
         snapshot.api_append_chunk(0,rows);snapshot.api_finalize(1,len(rows));snapshot._prepare()
         chunk=snapshot.chunk_ids.filtered(lambda c:c.phase=="prepared")
         snapshot._load_next();snapshot.invalidate_recordset();chunk.invalidate_recordset()
@@ -71,7 +71,7 @@ class TestDispatchIntegration(TransactionCase):
     def test_cron_slice_retains_cursor_and_resumes_without_duplicates(self):
         ident = self.source.api_start_batch("cron-slice-resume", "2026-01-10")["id"]
         snapshot = self.env["dispatch.snapshot"].browse(ident)
-        rows = [dict(self.row, NumeroFactura="SLICE-%04d" % i) for i in range(1500)]
+        rows = [dict(self.row, NumeroFactura="SLICE-%04d" % i, Factura="SLICE-%04d" % i) for i in range(1500)]
         snapshot.api_append_chunk(0, rows); snapshot.api_finalize(1, len(rows)); snapshot._prepare()
         with patch.object(snapshot_module, "CRON_MAX_STEPS", 2), \
              patch.object(snapshot_module, "CRON_BUDGET_SECONDS", 60), \
@@ -94,7 +94,7 @@ class TestDispatchIntegration(TransactionCase):
         snapshot._prepare(); snapshot._load_next()
         ident = self.source.api_start_batch("cron-slice-rollback-many", "2026-01-10")["id"]
         many = self.env["dispatch.snapshot"].browse(ident)
-        rows = [dict(self.row, NumeroFactura="ROLL-%04d" % i) for i in range(1500)]
+        rows = [dict(self.row, NumeroFactura="ROLL-%04d" % i, Factura="ROLL-%04d" % i) for i in range(1500)]
         many.api_append_chunk(0, rows); many.api_finalize(1, len(rows)); many._prepare()
         with patch.object(snapshot_module, "CRON_MAX_STEPS", 2), \
              patch.object(snapshot_module, "CRON_BUDGET_SECONDS", 60), \
@@ -118,7 +118,7 @@ class TestDispatchIntegration(TransactionCase):
         first._prepare(); first._load_next()
         ident = self.source.api_start_batch("background-existing-cursor", "2026-01-10")["id"]
         snapshot = self.env["dispatch.snapshot"].browse(ident)
-        rows = [dict(self.row, NumeroFactura="BG-%04d" % i) for i in range(600)]
+        rows = [dict(self.row, NumeroFactura="BG-%04d" % i, Factura="BG-%04d" % i) for i in range(600)]
         snapshot.api_append_chunk(0, rows); snapshot.api_finalize(1, len(rows)); snapshot._prepare()
         snapshot._load_next()
         self.assertEqual(snapshot.loaded_invoices, 100)
@@ -205,7 +205,7 @@ class TestDispatchIntegration(TransactionCase):
         self.env.ref("transcash_dispatch_analysis.cron_dispatch_import").active = False
         ident = self.source.api_start_batch("interactive-resume", "2026-01-10")["id"]
         snapshot = self.env["dispatch.snapshot"].browse(ident)
-        snapshot.api_append_chunk(0, [self.row, {**self.row, "NumeroFactura": "2"}])
+        snapshot.api_append_chunk(0, [self.row, {**self.row, "NumeroFactura": "2", "Factura": "2"}])
         snapshot.api_finalize(1, 2)
         with patch.object(snapshot_module, "BATCH_SIZE", 1):
             snapshot.process_import_step()
@@ -348,9 +348,20 @@ class TestDispatchIntegration(TransactionCase):
         self.assertEqual(len(versions),2)
         self.assertEqual(len(current),1)
         self.assertEqual(current.snapshot_id,second)
-        self.assertEqual(current.invoice_key,'["FA","1"]')
+        self.assertEqual(current.invoice_key,'["FAC","001"]')
         self.assertEqual(first.state,"archived")
         self.assertEqual(self.env["dispatch.dashboard"].get_data({"source_id":self.source.id})["stats"]["pending"],1)
+
+    def test_external_invoice_groups_internal_numbers_and_displays_fac(self):
+        ident = self.source.api_start_batch("external-identity", "2026-01-10")["id"]
+        snapshot = self.env["dispatch.snapshot"].browse(ident)
+        rows = [self.row, {**self.row, "NumeroFactura": "9", "CodBodega": "Y"},
+                {**self.row, "Factura": "002"}]
+        snapshot.api_append_chunk(0, rows); snapshot.api_finalize(1, len(rows))
+        snapshot._prepare(); snapshot._load_next()
+        self.assertEqual(set(snapshot.invoice_ids.mapped("name")), {"FAC/001", "FAC/002"})
+        self.assertEqual(len(snapshot.invoice_ids.filtered(lambda r: r.external_number == "001").line_ids), 2)
+        self.assertEqual(self.env["dispatch.dashboard"].get_data({"source_id": self.source.id})["stats"]["pending"], 2)
 
     def test_repeated_detail_updates_instead_of_adding_weight(self):
         ident=self.source.api_start_batch("duplicate-details","2026-01-10")["id"]
@@ -402,7 +413,7 @@ class TestDispatchIntegration(TransactionCase):
         invoice.write({"is_current":False,"invoice_key":'["FA","1","Old establishment"]'})
         self.env["dispatch.invoice"]._initialize_unique_records(self.env.company)
         self.assertTrue(invoice.is_current)
-        self.assertEqual(invoice.invoice_key,'["FA","1"]')
+        self.assertEqual(invoice.invoice_key,'["FAC","001"]')
         self.assertTrue(invoice.warehouse_ids)
         audit=self.env["dispatch.dashboard"].validate_current_records()
         self.assertEqual(audit["current_duplicate_keys"],0)
@@ -459,10 +470,10 @@ class TestDispatchIntegration(TransactionCase):
     def test_timeliness_pie_and_delay_drilldowns_follow_unique_import(self):
         ident = self.source.api_start_batch("timeliness-pie", "2026-01-10")["id"]
         snapshot = self.env["dispatch.snapshot"].browse(ident)
-        on_time = {**self.row, "NumeroFactura": "TIME-1", "DespachoFisico": 1, "Pendiente": 0,
+        on_time = {**self.row, "NumeroFactura": "TIME-1", "Factura": "TIME-1", "DespachoFisico": 1, "Pendiente": 0,
             "UltimoDespacho": "2026-01-03"}
-        late = {**on_time, "NumeroFactura": "TIME-2", "UltimoDespacho": "2026-01-07"}
-        pending = {**self.row, "NumeroFactura": "TIME-3"}
+        late = {**on_time, "NumeroFactura": "TIME-2", "Factura": "TIME-2", "UltimoDespacho": "2026-01-07"}
+        pending = {**self.row, "NumeroFactura": "TIME-3", "Factura": "TIME-3"}
         snapshot.api_append_chunk(0, [on_time, on_time, late, pending]); snapshot.api_finalize(1, 4)
         snapshot._prepare(); snapshot._load_next()
         self.assertEqual(len(snapshot.invoice_ids), 3)
@@ -481,9 +492,9 @@ class TestDispatchIntegration(TransactionCase):
     def test_timeliness_warehouse_scope_can_complete_one_origin_only(self):
         ident = self.source.api_start_batch("timeliness-warehouses", "2026-01-10")["id"]
         snapshot = self.env["dispatch.snapshot"].browse(ident)
-        completed = {**self.row, "NumeroFactura": "WARE-TIME", "CodBodega": "TIME-A", "Bodega": "Time A",
+        completed = {**self.row, "NumeroFactura": "WARE-TIME", "Factura": "WARE-TIME", "CodBodega": "TIME-A", "Bodega": "Time A",
             "DespachoFisico": 1, "Pendiente": 0, "UltimoDespacho": "2026-01-07"}
-        outstanding = {**self.row, "NumeroFactura": "WARE-TIME", "CodBodega": "TIME-B", "Bodega": "Time B"}
+        outstanding = {**self.row, "NumeroFactura": "WARE-TIME", "Factura": "WARE-TIME", "CodBodega": "TIME-B", "Bodega": "Time B"}
         snapshot.api_append_chunk(0, [completed, outstanding]); snapshot.api_finalize(1, 2)
         snapshot._prepare(); snapshot._load_next()
         invoice = snapshot.invoice_ids

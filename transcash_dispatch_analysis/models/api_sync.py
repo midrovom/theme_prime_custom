@@ -109,7 +109,7 @@ class DispatchSourceAPI(models.Model):
                     _logger.info("Dispatch API source=%s snapshot=%s raw_chunks=%s stage_seconds=%.3f",
                         self.id, snapshot.id, count, perf_counter() - normalized_at)
                     result = "queued"
-                    message = _("Se recibieron %s líneas. El procesamiento por bloques actualiza las facturas por TipoFactura + NumeroFactura; el corte anterior sigue visible hasta terminar.") % len(dataset["rows"])
+                    message = _("Se recibieron %s líneas. El procesamiento por bloques actualiza las facturas por número externo (Factura); el corte anterior sigue visible hasta terminar.") % len(dataset["rows"])
                 self.write({"api_last_result": result, "api_last_message": message,
                             "api_last_success_at": fields.Datetime.now(), "api_last_snapshot_id": snapshot.id})
         except (DispatchAPIError, UserError, ValidationError) as exc:

@@ -9,10 +9,10 @@ FROM dispatch_invoice
 GROUP BY company_id;
 
 -- Este resultado debe estar vacío para los datos vigentes.
-SELECT company_id, invoice_type, internal_number, count(*) AS repeticiones
+SELECT company_id, invoice_key, count(*) AS repeticiones
 FROM dispatch_invoice
 WHERE is_current
-GROUP BY company_id, invoice_type, internal_number
+GROUP BY company_id, invoice_key
 HAVING count(*) > 1;
 
 -- Una factura puede tener varias versiones históricas legítimas.

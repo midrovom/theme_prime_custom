@@ -311,7 +311,7 @@ class DispatchSnapshot(models.Model):
 
     def _invoice_values(self, item, warehouse_map=None):
         summary=item["summary"]
-        canonical_key=invoice_key({"TipoFactura":summary["invoice_type"],"NumeroFactura":summary["internal_number"]})
+        canonical_key=invoice_key({"Factura":summary.get("external_number"), "TipoFactura":summary["invoice_type"],"NumeroFactura":summary["internal_number"]})
         if summary.get("invoice_key")!=canonical_key or "invoiced_weight" not in summary or "invoiced_pallets" not in summary:
             unique,_,_=unique_invoice_lines(item["lines"])
             summary=aggregate_invoice(canonical_key,unique,self.cutoff_date)

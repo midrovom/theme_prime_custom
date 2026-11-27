@@ -264,9 +264,9 @@ class DispatchDashboard(models.AbstractModel):
         company_domain=[("company_id","in",self.env.companies.ids)]
         current=invoices.search_count(company_domain+[("is_current","=",True)])
         historical=invoices.search_count(company_domain+[("snapshot_state","=","archived")])
-        self.env.cr.execute("""SELECT count(*) FROM (SELECT company_id,invoice_type,internal_number
+        self.env.cr.execute("""SELECT count(*) FROM (SELECT company_id,invoice_key
             FROM dispatch_invoice WHERE company_id=ANY(%s) AND is_current
-            GROUP BY company_id,invoice_type,internal_number HAVING count(*)>1) duplicates""",(self.env.companies.ids,))
+            GROUP BY company_id,invoice_key HAVING count(*)>1) duplicates""",(self.env.companies.ids,))
         return {"current":current,"historical_versions":historical,"current_duplicate_keys":self.env.cr.fetchone()[0],
                 "consolidated_records":consolidated}
 

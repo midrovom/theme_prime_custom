@@ -4,11 +4,36 @@ from test_engine_standalone import e, line, inv
 
 
 class UniquenessTests(unittest.TestCase):
-    def test_business_key_excludes_establishment_warehouse_and_external_number(self):
+    def test_business_key_uses_external_not_internal_or_type(self):
         first=line(TipoFactura=" fa ",NumeroFactura=" 100 ")
-        second=line(Establecimiento="Otro",CodBodega="OTRA",Factura="999")
+        second=line(Establecimiento="Otro",CodBodega="OTRA",NumeroFactura="999",TipoFactura="NC")
         self.assertEqual(e.invoice_key(first),e.invoice_key(second))
-        self.assertNotEqual(e.invoice_key(first),e.invoice_key(line(TipoFactura="NC")))
+        self.assertNotEqual(e.invoice_key(first),e.invoice_key(line(Factura="999")))
+
+    def test_display_and_prefix(self):
+        for external in ("001-001-000000123", " FAC/001-001-000000123 "):
+            summary=inv([line(Factura=external)])
+            self.assertEqual(summary["name"], "FAC/001-001-000000123")
+            self.assertEqual(summary["external_number"], "001-001-000000123")
+            self.assertEqual(summary["invoice_key"], '["FAC","001-001-000000123"]')
+
+    def test_missing_external_is_explicit_and_never_collides(self):
+        raw=line(Factura="")
+        self.assertIn("SIN NÚMERO EXTERNO", inv([raw])["name"])
+        self.assertNotEqual(e.invoice_key(raw), e.invoice_key(line(Factura="100")))
+        self.assertNotEqual(e.invoice_key(raw), e.invoice_key(line(Factura="",NumeroFactura="101")))
+
+    def test_external_grouping_across_internal_numbers(self):
+        rows=[line(), line(NumeroFactura="200",CodBodega="B2"), line(Factura="002-1")]
+        groups=dict(e.iter_invoice_groups(rows))
+        self.assertEqual(sorted(map(len,groups.values())),[1,2])
+        self.assertEqual(len(e.unique_invoice_lines(groups[e.invoice_key(rows[0])])[0]),2)
+
+    def test_current_external_winner_per_company(self):
+        base={"id":1,"company_id":1,"invoice_type":"FA","internal_number":"1","external_number":"001", "cutoff_date":"2026-10-29","snapshot_id":1}
+        rows=[base,{**base,"id":2,"internal_number":"99","snapshot_id":2},
+              {**base,"id":3,"external_number":"002"},{**base,"id":4,"company_id":2}]
+        self.assertEqual(set(e.latest_invoice_versions(rows)),{2,3,4})
 
     def test_identical_repeated_details_are_not_added(self):
         rows=[line(PesoPendiente=9000),line(PesoPendiente=9000)]
@@ -85,7 +110,7 @@ class UniquenessTests(unittest.TestCase):
         for key in ("invoiced_weight","dispatched_weight","invoiced_weight_missing_rows","dispatched_weight_missing_rows"):
             summary.pop(key,None)
         values=Job()._invoice_values({"summary":summary,"lines":[raw]}, {"B1":10})
-        self.assertEqual(values["invoice_key"],'["FA","100"]')
+        self.assertEqual(values["invoice_key"],'["FAC","001-1"]')
         self.assertEqual(values["invoiced_weight"],9000)
         self.assertEqual(values["line_ids"][0][2]["warehouse_id"],10)
 

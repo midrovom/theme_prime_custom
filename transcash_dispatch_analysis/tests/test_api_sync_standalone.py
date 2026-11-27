@@ -25,6 +25,15 @@ def line(**changes):
 class ContractTests(unittest.TestCase):
     def convert(self, raw): return adapter.convert_dispatch_payload(raw, TODAY)
 
+    def test_external_invoice_groups_and_preserves_leading_zeros(self):
+        rows = [line(Factura="FAC/001-001-000000123"),
+                line(Factura="001-001-000000123", NumeroFactura="9999", CodBodega="B2"),
+                line(Factura="001-001-000000124")]
+        converted = self.convert(rows)
+        self.assertEqual(converted["rows"][0]["Factura"], "001-001-000000123")
+        self.assertEqual(sorted(len(group) for _, group in iter_invoice_groups(converted["rows"])), [1, 2])
+        self.assertEqual(converted["unique_lines"], 3)
+
     def test_flat_and_wrapped_responses(self):
         for raw in ([line()], {"data": [line()]}, {"success": True, "result": {"rows": [line()]}}, json.dumps([line()]), line()):
             with self.subTest(raw=type(raw)):

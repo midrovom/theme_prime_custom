@@ -53,11 +53,33 @@ def as_date(value):
         raise ValueError("Fecha inválida: %s. Utilice YYYY-MM-DD." % value) from exc
 
 
+def external_invoice_number(value):
+    if value is None or value is False or value == "":
+        return ""
+    if isinstance(value, bool) or not isinstance(value, (str, int)):
+        raise ValueError("Factura debe ser texto o entero; conserve los ceros iniciales como texto.")
+    text = str(value).strip()
+    # Some sources already include the display prefix; do not duplicate it.
+    if text[:4].upper() == "FAC/":
+        text = text[4:].strip()
+    return text
+
+
 def invoice_key(row):
+    external = external_invoice_number(row.get("Factura"))
+    if external:
+        return json.dumps(["FAC", external], ensure_ascii=False, separators=(",", ":"))
+    # Keep unnumbered legacy documents separate rather than merging or losing them.
     required = (normalize(row.get("TipoFactura")), str(row.get("NumeroFactura") or "").strip())
     if not all(required):
-        raise ValueError("Cada línea debe incluir TipoFactura y NumeroFactura.")
-    return json.dumps(list(required), ensure_ascii=False, separators=(",", ":"))
+        raise ValueError("Cada línea debe incluir Factura o TipoFactura y NumeroFactura.")
+    return json.dumps(["SIN_EXTERNO", *required], ensure_ascii=False, separators=(",", ":"))
+
+
+def invoice_display_name(row):
+    external = external_invoice_number(row.get("Factura"))
+    return "FAC/" + external if external else "FAC/SIN NÚMERO EXTERNO (%s %s)" % (
+        normalize(row.get("TipoFactura")), str(row.get("NumeroFactura") or "").strip())
 
 
 def unique_invoice_lines(rows):
@@ -98,10 +120,12 @@ def weight_metrics(row):
 
 
 def latest_invoice_versions(rows):
-    """One published observation per company, type and invoice number."""
+    """One published observation per company and external invoice identity."""
     latest = {}
     for row in rows:
-        key = (row["company_id"],normalize(row["invoice_type"]),str(row["internal_number"]).strip())
+        key = (row["company_id"], row.get("invoice_key") or invoice_key({
+            "Factura": row.get("external_number"), "TipoFactura": row.get("invoice_type"),
+            "NumeroFactura": row.get("internal_number")}))
         rank = (as_date(row["cutoff_date"]),row["snapshot_id"],row["id"])
         if key not in latest or rank > latest[key][0]: latest[key]=(rank,row["id"])
     return [value[1] for value in latest.values()]
@@ -246,8 +270,8 @@ def aggregate_invoice(key, rows, cutoff):
     first = rows[0]
     return {
         "invoice_key": key,
-        "name": "%s %s" % (first.get("TipoFactura", ""), first.get("NumeroFactura", "")),
-        "external_number": str(first.get("Factura") or ""),
+        "name": invoice_display_name(first),
+        "external_number": external_invoice_number(first.get("Factura")),
         "invoice_type": normalize(first.get("TipoFactura")),
         "internal_number": str(first.get("NumeroFactura") or "").strip(),
         "establishment": str(first.get("Establecimiento") or ""),
@@ -287,7 +311,7 @@ def aggregate_invoice(key, rows, cutoff):
 
 
 def first_number(rows):
-    return str(rows[0].get("NumeroFactura") or "sin número")
+    return invoice_display_name(rows[0])
 
 
 def due_date(start, days, day_type="calendar", holidays=()):

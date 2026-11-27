@@ -1,3 +1,9 @@
+# Versión 18.0.1.8.11 — Factura externa
+
+La clave vigente es el número externo `Factura` por compañía, mostrado como `FAC/número externo`. `TipoFactura` y `NumeroFactura` se conservan para trazabilidad; si la fuente no entrega un número externo, el documento se conserva separado con el rótulo `FAC/SIN NÚMERO EXTERNO (tipo interno)` y una clave de respaldo. Los apartados de versiones anteriores describen sus reglas históricas, no la nueva identidad.
+
+La migración reconstruye los cortes terminados a partir de los originales guardados (o sus líneas de origen si el archivo no está disponible), conserva las políticas de cada corte y reinicia la preparación de importaciones parciales. Ejecutar con copia de seguridad, servicio detenido y sin sincronizaciones concurrentes. Los identificadores técnicos de las facturas reconstruidas pueden cambiar.
+
 # Transcash · Análisis de despachos para Odoo 18
 
 Versión 18.0.1.8.7 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.

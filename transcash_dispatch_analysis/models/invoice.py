@@ -1,8 +1,9 @@
 import json
 import logging
+from collections import defaultdict
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError
-from ..services.engine import aggregate_invoice, evaluate, invoice_key, latest_invoice_versions, normalize, unique_invoice_lines, weight_metrics, pallet_metrics
+from ..services.engine import aggregate_invoice, evaluate, invoice_display_name, invoice_key, latest_invoice_versions, normalize, unique_invoice_lines, weight_metrics, pallet_metrics
 
 _logger = logging.getLogger(__name__)
 
@@ -13,10 +14,10 @@ SLA_OPTIONS = [("no_rule", "Sin plazo"), ("invalid", "Datos por revisar"), ("adj
 class DispatchInvoice(models.Model):
     _name = "dispatch.invoice"
     _description = "Factura para análisis de despachos"
-    _order = "invoice_date desc, internal_number desc"
+    _order = "invoice_date desc, external_number desc"
     _check_company_auto = True
 
-    name = fields.Char(required=True, index=True)
+    name = fields.Char(string="Factura", required=True, index=True)
     invoice_key = fields.Char(required=True, index=True)
     is_current = fields.Boolean(string="Registro vigente único", default=False, index=True, readonly=True)
     snapshot_id = fields.Many2one("dispatch.snapshot", required=True, ondelete="cascade", check_company=True, index=True)
@@ -24,9 +25,9 @@ class DispatchInvoice(models.Model):
     company_id = fields.Many2one(related="snapshot_id.company_id", store=True, index=True)
     snapshot_state = fields.Selection(related="snapshot_id.state", store=True, index=True)
     cutoff_date = fields.Date(related="snapshot_id.cutoff_date", store=True)
-    external_number = fields.Char(string="Factura (archivo)", index=True)
+    external_number = fields.Char(string="Número externo", index=True)
     invoice_type = fields.Char(string="Tipo", required=True)
-    internal_number = fields.Char(string="NumeroFactura (archivo)", index=True, required=True)
+    internal_number = fields.Char(string="Número interno", index=True, required=True)
     establishment = fields.Char(string="Establecimiento", index=True)
     invoice_date = fields.Date(string="Fecha de factura", index=True)
     invoice_time = fields.Char(string="Hora original")
@@ -101,21 +102,21 @@ class DispatchInvoice(models.Model):
             invoice.warehouse_ids = invoice.line_ids.mapped("warehouse_id")
 
     def init(self):
-        self.env.cr.execute("""CREATE UNIQUE INDEX IF NOT EXISTS dispatch_invoice_current_unique
-            ON dispatch_invoice(company_id, invoice_type, internal_number) WHERE is_current""")
+        self.env.cr.execute("""CREATE UNIQUE INDEX IF NOT EXISTS dispatch_invoice_current_external_unique
+            ON dispatch_invoice(company_id, invoice_key) WHERE is_current""")
 
     @api.model
     def _refresh_current_records(self, company_id):
         self.env.cr.execute("SELECT pg_advisory_xact_lock(%s, %s)", (180107, company_id))
-        self.flush_model(["is_current", "invoice_key", "invoice_type", "internal_number", "company_id", "snapshot_id"])
+        self.flush_model(["is_current", "invoice_key", "company_id", "snapshot_id"])
         self.env["dispatch.snapshot"].flush_model(["state", "cutoff_date", "source_id"])
         self.env["dispatch.source"].flush_model(["active_snapshot_id"])
-        self.env.cr.execute("""SELECT i.id,i.invoice_type,i.internal_number,s.cutoff_date,s.id FROM dispatch_invoice i
+        self.env.cr.execute("""SELECT i.id,i.invoice_key,s.cutoff_date,s.id FROM dispatch_invoice i
             JOIN dispatch_snapshot s ON s.id=i.snapshot_id
             JOIN dispatch_source src ON src.id=s.source_id AND src.active_snapshot_id=s.id
             WHERE i.company_id=%s AND s.state='ready'""", (company_id,))
-        winner_ids = latest_invoice_versions([{"id":row[0],"invoice_type":row[1],"internal_number":row[2],
-            "cutoff_date":row[3],"snapshot_id":row[4],"company_id":company_id} for row in self.env.cr.fetchall()])
+        winner_ids = latest_invoice_versions([{"id":row[0],"invoice_key":row[1],
+            "cutoff_date":row[2],"snapshot_id":row[3],"company_id":company_id} for row in self.env.cr.fetchall()])
         self.env.cr.execute("UPDATE dispatch_invoice SET is_current=false WHERE company_id=%s AND is_current", (company_id,))
         if winner_ids:
             self.env.cr.execute("UPDATE dispatch_invoice SET is_current=true WHERE id=ANY(%s)", (winner_ids,))
@@ -151,11 +152,28 @@ class DispatchInvoice(models.Model):
             _logger.info("Despachos: inicia consolidación de datos de la compañía %s", company.id)
             self.env.cr.execute("SELECT pg_advisory_xact_lock(%s,%s)", (180107,company.id))
             self.env.cr.execute("UPDATE dispatch_invoice SET is_current=false WHERE company_id=%s", (company.id,))
-            self.env.cr.execute("""SELECT array_agg(id ORDER BY id) FROM dispatch_invoice
-                WHERE company_id=%s GROUP BY snapshot_id, upper(trim(invoice_type)), trim(internal_number)
-                HAVING count(*)>1""", (company.id,))
-            groups = self.env.cr.fetchall()
-            for (ids,) in groups:
+            self.env.cr.execute("""SELECT id,snapshot_id,invoice_key,external_number,invoice_type,internal_number,name
+                FROM dispatch_invoice WHERE company_id=%s ORDER BY id""", (company.id,))
+            groups = defaultdict(list)
+            changes = {}
+            for ident, snapshot, stored, external, kind, internal, name in self.env.cr.fetchall():
+                row = {"Factura": external, "TipoFactura": kind, "NumeroFactura": internal}
+                canonical = invoice_key(row)
+                groups[(snapshot, canonical)].append(ident)
+                label = invoice_display_name(row)
+                if stored != canonical or name != label:
+                    changes[ident] = (canonical, label)
+            # Free obsolete keys before rewriting; the snapshot constraint remains active.
+            for ident in changes:
+                self.env.cr.execute("UPDATE dispatch_invoice SET invoice_key=%s WHERE id=%s",
+                                    ("external-rekey:%s" % ident, ident))
+            records.invalidate_model(["invoice_key", "name", "is_current"])
+            for ids in groups.values():
+                if len(ids) == 1:
+                    if ids[0] in changes:
+                        canonical, label = changes[ids[0]]
+                        records.browse(ids[0]).write({"invoice_key": canonical, "name": label})
+                    continue
                 invoices = records.browse(ids)
                 keeper = invoices[-1]
                 raw = [line.raw_data for invoice in invoices for line in invoice.line_ids if line.raw_data]
@@ -183,10 +201,8 @@ class DispatchInvoice(models.Model):
                     removed+=duplicates
             records.flush_model()
             self.env["dispatch.invoice.line"].flush_model()
-            self.env.cr.execute("""UPDATE dispatch_invoice SET invoice_type=upper(trim(invoice_type)),
-                internal_number=trim(internal_number),
-                invoice_key='['||to_json(upper(trim(invoice_type)))::text||','||to_json(trim(internal_number))::text||']'
-                WHERE company_id=%s""", (company.id,))
+            # Identity is assigned by the import engine and the versioned migration.
+            # Do not regenerate it from the internal number.
             lines = self.env["dispatch.invoice.line"].sudo()
             last_id = 0
             processed_lines = 0

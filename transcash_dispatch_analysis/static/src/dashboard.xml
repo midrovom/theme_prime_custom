@@ -91,7 +91,6 @@
                   </g>
                 </svg>
               </div>
-              <p class="td-chart-note">% de retraso = despachos demorados / despachos completos evaluables × 100. Sin plazo o datos no evaluables: cuentan en cantidad cuando la fecha es válida, pero no en el porcentaje. Sin medición: la línea se interrumpe.</p>
             </section>
             <section class="td-panel td-wide td-monthly-panel">
               <div class="td-section-header"><div><h3>Despachos pendientes acumulados</h3><p>Por mes de facturación · Pendientes al corte seleccionado</p></div><div class="td-monthly-total"><span>Pendientes del año</span><strong t-esc="format(state.data.monthly.pending_total)"/></div></div>
@@ -112,7 +111,6 @@
                   </g>
                 </svg>
               </div>
-              <p class="td-chart-note">Acumulado = pendientes anteriores del mismo año + pendientes del mes. Si una factura se completa, deja de formar parte del acumulado al actualizar el corte. No representa saldos históricos al cierre de cada mes ni incluye pendientes facturados en años anteriores.</p>
             </section>
           </t>
         </div>
